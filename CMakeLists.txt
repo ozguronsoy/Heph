@@ -1,0 +1,58 @@
+cmake_minimum_required(VERSION 3.28)
+
+# extract version from file
+file(READ "${CMAKE_CURRENT_LIST_DIR}/VERSION" HEPH_VERSION)
+string(STRIP "${HEPH_VERSION}" HEPH_VERSION)
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$" HEPH_VERSION_REGEX "${HEPH_VERSION}")
+set(HEPH_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(HEPH_VERSION_MINOR ${CMAKE_MATCH_2})
+set(HEPH_VERSION_PATCH ${CMAKE_MATCH_3})
+
+add_definitions(
+    -DHEPH_VERSION="v${HEPH_VERSION}"
+    -DHEPH_VERSION_MAJOR=${HEPH_VERSION_MAJOR}
+    -DHEPH_VERSION_MINOR=${HEPH_VERSION_MINOR}
+    -DHEPH_VERSION_PATCH=${HEPH_VERSION_PATCH}
+)
+
+option(HEPH_BUILD_STATIC "HEPH_BUILD_STATIC" Off)
+option(HEPH_BUILD_SHARED "HEPH_BUILD_SHARED" Off)
+option(HEPH_BUILD_TESTS "HEPH_BUILD_TESTS" Off)
+option(HEPH_BUILD_DOCS "HEPH_BUILD_DOCS" Off)
+
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+else()
+
+    if(CMAKE_CXX_STANDARD LESS 23)
+        message(FATAL_ERROR "The C++ version must be 23 or higher.")
+    endif()
+
+endif()
+
+if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
+    project(Heph VERSION ${HEPH_VERSION} LANGUAGES CXX)
+endif()
+
+include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}/include
+)
+
+file(GLOB_RECURSE HEPH_HEADERS
+    ${CMAKE_CURRENT_LIST_DIR}/include/*.h
+)
+
+file(GLOB_RECURSE HEPH_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp
+)
+
+if(HEPH_BUILD_DOCS)
+    add_subdirectory(docs)
+endif()
+
+if(HEPH_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

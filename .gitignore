@@ -1,0 +1,5 @@
+.vscode/
+build/
+docs/html/
+build_tests.ps1
+build_docs.ps1
