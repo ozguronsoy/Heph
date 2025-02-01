@@ -82,4 +82,31 @@ namespace Heph
     extern HEPH_API const Version version;
 }
 
+/** @defgroup default_constructor
+  * Creates a new instance and initializes it with default values.
+  *
+ */
+
+ /** @defgroup constructor
+  * Creates a new instance and initializes it with the provided values.
+  *
+ */
+
+ /** @defgroup copy_constructor
+  * Creates a new instance and copies the rhs's data to it.
+  *
+  * @param rhs Instance whose data will be copied.
+ */
+
+ /** @defgroup move_constructor
+  * Creates a new instance and moves the rhs's data to it.
+  *
+  * @param rhs Instance whose data will be moved.
+ */
+
+ /** @defgroup destructor
+  * Releases the resources and destroys the instance.
+  *
+ */
+
 #endif
