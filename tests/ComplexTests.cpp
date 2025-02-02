@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "Complex.h"
+#include "Exceptions/InvalidArgumentException.h"
 
 using TNumber = double;
 using Complex = Heph::Complex<TNumber>;
@@ -63,16 +64,16 @@ TEST(HephTest, Complex_SubscriptOp)
         Complex c(1, 2);
         EXPECT_EQ(&c[0], &c.real);
         EXPECT_EQ(&c[1], &c.imag);
-        EXPECT_ANY_THROW(c[-1]);
-        EXPECT_ANY_THROW(c[3]);
+        EXPECT_THROW(c[-1], Heph::InvalidArgumentException);
+        EXPECT_THROW(c[3], Heph::InvalidArgumentException);
     }
 
     {
         const Complex c(1, 2);
         EXPECT_EQ(&c[0], &c.real);
         EXPECT_EQ(&c[1], &c.imag);
-        EXPECT_ANY_THROW(c[-1]);
-        EXPECT_ANY_THROW(c[3]);
+        EXPECT_THROW(c[-1], Heph::InvalidArgumentException);
+        EXPECT_THROW(c[3], Heph::InvalidArgumentException);
     }
 }
 

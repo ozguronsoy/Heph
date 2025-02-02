@@ -1,0 +1,25 @@
+#ifndef HEPH_TIMEOUT_EXCEPTION_H
+#define HEPH_TIMEOUT_EXCEPTION_H
+
+#include "HephShared.h"
+#include "Exception.h"
+
+/** @file */
+
+namespace Heph
+{
+	/** @brief Raised when an operation takes too long to complete and reaches timeout. */
+	class HEPH_API TimeoutException : public Exception
+	{
+	public:
+		/** @copydoc Exception(const std::string&,const std::string&) */
+		TimeoutException(const std::string& method, const std::string& message);
+
+		virtual std::string Name() const noexcept override;
+
+	protected:
+		virtual void AddToExceptions() const override;
+	};
+}
+
+#endif

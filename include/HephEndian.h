@@ -30,10 +30,10 @@ namespace Heph
 {
     /**
      * Swaps the bytes of the data and returns the result as a new instance.
-     * 
+     *
      * @tparam T Type of the data.
      * @param data Data to be processed.
-     * @return Byte swapped data. 
+     * @return Byte swapped data.
      */
     template<typename T>
     inline constexpr T SwapEndian(T data)
@@ -50,11 +50,11 @@ namespace Heph
 
     /**
      * Swaps the bytes of the data and returns the result as a new instance.
-     * 
+     *
      * @tparam T Type of the data.
      * @param data Data to be processed.
      * @param endian Current endianness of the data.
-     * @return Byte swapped data. 
+     * @return Byte swapped data.
      */
     template<typename T>
     inline constexpr T SwapEndian(T data, std::endian& endian)

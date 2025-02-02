@@ -65,6 +65,13 @@
 #define HEPH_FUNC __func__
 #endif
 
+/** Deletes the copy constructor and assignment operator. */
+#define HEPH_DISABLE_COPY(className)    className(const className&) = delete;               \
+                                        className& operator=(const className&) = delete
+
+/** Deletes the default and copy constructor, and assignment operator.  */
+#define HEPH_DISABLE_INSTANCE(className) className() = delete; HEPH_DISABLE_COPY(className)
+
 namespace Heph
 {
     /** @brief Stores version information for run-time verification. */
