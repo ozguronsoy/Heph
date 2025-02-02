@@ -32,13 +32,13 @@ namespace Heph
          * @param real @copydoc real
          * @param imag @copydoc imag
          */
-        explicit constexpr Complex(TNumber real = 0.0, TNumber imag = 0.0)
+        constexpr Complex(TNumber real = 0.0, TNumber imag = 0.0)
             : real(real), imag(imag)
         {
         }
 
         /** @copydoc copy_constructor */
-        explicit constexpr Complex(const Complex& rhs)
+        constexpr Complex(const Complex& rhs)
             : Complex(rhs.real, rhs.imag)
         {
         }
@@ -47,6 +47,13 @@ namespace Heph
         explicit constexpr Complex(const std::complex<TNumber>& rhs)
             : Complex(rhs.real(), rhs.imag())
         {
+        }
+
+        constexpr Complex& operator=(TNumber rhs)
+        {
+            this->real = rhs;
+            this->imag = 0;
+            return *this;
         }
 
         constexpr Complex& operator=(const Complex& rhs)
@@ -187,6 +194,219 @@ namespace Heph
         }
 
         /**
+         * Subtracts rhs from the real part and returns in a new instance. 
+         * 
+         * @param rhs Real number to subtract.
+         * @return Result of the operation.
+         */
+        constexpr Complex operator-(TNumber rhs) const
+        {
+            return Complex(this->real - rhs, this->imag);
+        }
+
+        /** @copydoc operator-(const Complex<TRhsNumber>&) */
+        template<typename TRhsNumber>
+        constexpr Complex operator-(const std::complex<TRhsNumber>& rhs) const
+        {
+            return Complex(this->real - rhs.real(), this->imag - rhs.imag());
+        }
+
+        /**
+         * Subtracts two complex numbers. 
+         * 
+         * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+         * @param rhs Complex number to subtract.
+         * @return Result of the operation.
+         */
+        template<typename TRhsNumber>
+        constexpr Complex operator-(const Complex<TRhsNumber>& rhs) const
+        {
+            return Complex(this->real - rhs.real, this->imag - rhs.imag);
+        }
+
+        /**
+         * Subtracts rhs to the real part.
+         * 
+         * @param rhs Real number to subtract.
+         * @return Reference to current instance.  
+         */
+        constexpr Complex& operator-=(TNumber rhs)
+        {
+            this->real -= rhs;
+            return *this;
+        }
+
+        /** @copydoc operator-=(const Complex<TRhsNumber>&) */
+        template<typename TRhsNumber>
+        constexpr Complex& operator-=(const std::complex<TRhsNumber>& rhs)
+        {
+            this->real -= rhs.real();
+            this->imag -= rhs.imag();
+            return *this;
+        }
+
+        /**
+         * Subtracts two complex numbers.
+         * 
+         * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+         * @param rhs Complex number to subtract.
+         * @return Reference to current instance.  
+         */
+        template<typename TRhsNumber>
+        constexpr Complex& operator-=(const Complex<TRhsNumber>& rhs)
+        {
+            this->real -= rhs.real;
+            this->imag -= rhs.imag;
+            return *this;
+        }
+
+        /**
+         * Multiplies the complex number with rhs and returns in a new instance. 
+         * 
+         * @param rhs Multiplication factor.
+         * @return Result of the operation.
+         */
+        constexpr Complex operator*(TNumber rhs) const
+        {
+            return Complex(this->real * rhs, this->imag * rhs);
+        }
+
+        /** @copydoc operator*(const Complex<TRhsNumber>&) */
+        template<typename TRhsNumber>
+        constexpr Complex operator*(const std::complex<TRhsNumber>& rhs) const
+        {
+            return Complex(
+                this->real * rhs.real() - this->imag * rhs.imag(), 
+                this->imag * rhs.real() + this->real * rhs.imag()
+            );
+        }
+
+        /**
+         * Multiplies two complex numbers. 
+         * 
+         * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+         * @param rhs Complex number to multiply.
+         * @return Result of the operation.
+         */
+        template<typename TRhsNumber>
+        constexpr Complex operator*(const Complex<TRhsNumber>& rhs) const
+        {
+            return Complex(
+                this->real * rhs.real - this->imag * rhs.imag, 
+                this->imag * rhs.real + this->real * rhs.imag
+            );
+        }
+
+        /**
+         * Multiplies with the rhs. 
+         * 
+         * @param rhs Multiplication factor.
+         * @return Reference to current instance.  
+         */
+        constexpr Complex& operator*=(TNumber rhs)
+        {
+            this->real *= rhs;
+            this->imag *= rhs;
+            return *this;
+        }
+
+        /** @copydoc operator*=(const Complex<TRhsNumber>&) */
+        template<typename TRhsNumber>
+        constexpr Complex& operator*=(const std::complex<TRhsNumber>& rhs)
+        {
+            *this = (*this) * rhs;
+            return *this;
+        }
+
+        /**
+         * Multiplies two complex numbers.
+         * 
+         * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+         * @param rhs Complex number to multiply.
+         * @return Reference to current instance.  
+         */
+        template<typename TRhsNumber>
+        constexpr Complex& operator*=(const Complex<TRhsNumber>& rhs)
+        {
+            *this = (*this) * rhs; 
+            return *this;
+        }
+
+        /**
+         * Divides the complex number by rhs and returns in a new instance. 
+         * 
+         * @param rhs Division factor.
+         * @return Result of the operation.
+         */
+        constexpr Complex operator/(TNumber rhs) const
+        {
+            return Complex(this->real / rhs, this->imag / rhs);
+        }
+
+        /** @copydoc operator/(const Complex<TRhsNumber>&) */
+        template<typename TRhsNumber>
+        constexpr Complex operator/(const std::complex<TRhsNumber>& rhs) const
+        {
+			const TRhsNumber denomiter = rhs.real() * rhs.real() + rhs.imag() * rhs.imag();
+			return Complex(
+                (this->real * rhs.real() + this->imag * rhs.imag()) / denomiter,
+				(this->imag * rhs.real() - this->real * rhs.imag()) / denomiter
+            );
+        }
+
+        /**
+         * Divides two complex numbers. 
+         * 
+         * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+         * @param rhs Complex number to divide by.
+         * @return Result of the operation.
+         */
+        template<typename TRhsNumber>
+        constexpr Complex operator/(const Complex<TRhsNumber>& rhs) const
+        {
+            const TRhsNumber denomiter = rhs.MagnitudeSquared();
+			return Complex(
+                (this->real * rhs.real + this->imag * rhs.imag) / denomiter,
+				(this->imag * rhs.real - this->real * rhs.imag) / denomiter
+            );
+        }
+
+        /**
+         * Divides by the rhs. 
+         * 
+         * @param rhs Division factor.
+         * @return Reference to current instance.  
+         */
+        constexpr Complex& operator/=(TNumber rhs)
+        {
+            this->real /= rhs;
+            this->imag /= rhs;
+            return *this;
+        }
+
+        /** @copydoc operator/=(const Complex<TRhsNumber>&) */
+        template<typename TRhsNumber>
+        constexpr Complex& operator/=(const std::complex<TRhsNumber>& rhs)
+        {
+            *this = (*this) / rhs;
+            return *this;
+        }
+
+        /**
+         * Divides two complex numbers.
+         * 
+         * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+         * @param rhs Complex number to divide.
+         * @return Reference to current instance.  
+         */
+        template<typename TRhsNumber>
+        constexpr Complex& operator/=(const Complex<TRhsNumber>& rhs)
+        {
+            *this = (*this) / rhs; 
+            return *this;
+        }
+
+        /**
          * Compares two complex numbers.
          * 
          * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
@@ -252,21 +472,94 @@ namespace Heph
         }
 
         /**
-         * Prints the complex number to the provided output stream.
+         * Inserts the complex number to the provided output stream.
          * 
-         * @param oss Output stream.
-         * @param c Complex number to print.
+         * @param os Output stream.
+         * @param c Complex number.
          * @return The output stream.
          */
-        friend std::ostream& operator<<(std::ostream& oss, const Complex& c)
+        friend std::ostream& operator<<(std::ostream& os, const Complex& c)
         {
             if (c.imag >= 0)
-                oss << c.real << " + " << c.imag << "j";
+                os << c.real << " + " << c.imag << "j";
             else
-                oss << c.real << " - " << -c.imag << "j";
-            return oss;
+                os << c.real << " - " << -c.imag << "j";
+            return os;
+        }
+
+        /**
+         * Extracts a complex number from the input stream.
+         * 
+         * @param is Input stream.
+         * @param c Complex number.
+         * @return The input stream.
+         */
+        friend std::istream& operator>>(std::istream &is, Complex& c)
+        {
+            is >> c.real >> c.imag;
+            return is;
         }
     };
+}
+
+/**
+ * Adds complex number to the real number.
+ * 
+ * @tparam TLhs Type of the lhs.
+ * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+ * @param lhs Real number.
+ * @param rhs Complex number.
+ * @return Result of the operation.
+ */
+template<typename TLhs, typename TRhsNumber>
+constexpr inline Heph::Complex<TRhsNumber> operator+(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
+{
+	return rhs + lhs;
+}
+
+/**
+ * Subtracts complex number from the real number.
+ * 
+ * @tparam TLhs Type of the lhs.
+ * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+ * @param lhs Real number.
+ * @param rhs Complex number.
+ * @return Result of the operation.
+ */
+template<typename TLhs, typename TRhsNumber>
+constexpr inline Heph::Complex<TRhsNumber> operator-(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
+{
+	return Heph::Complex<TRhsNumber>(lhs - rhs.real, -rhs.imag);
+}
+
+/**
+ * Multiplies the real number with a complex number.
+ * 
+ * @tparam TLhs Type of the lhs.
+ * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+ * @param lhs Real number.
+ * @param rhs Complex number.
+ * @return Result of the operation.
+ */
+template<typename TLhs, typename TRhsNumber>
+constexpr inline Heph::Complex<TRhsNumber> operator*(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
+{
+	return rhs * lhs;
+}
+
+/**
+ * Divides the real number by a complex number.
+ * 
+ * @tparam TLhs Type of the lhs.
+ * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
+ * @param lhs Real number.
+ * @param rhs Complex number.
+ * @return Result of the operation.
+ */
+template<typename TLhs, typename TRhsNumber>
+constexpr inline Heph::Complex<TRhsNumber> operator/(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
+{
+	return Heph::Complex<TRhsNumber>(lhs, 0) / rhs;
 }
 
 #endif

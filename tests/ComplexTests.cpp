@@ -90,9 +90,64 @@ TEST(HephTest, Complex_AddOp)
     EXPECT_EQ(c1 + Complex(2, 3), Complex(3, 5));
     EXPECT_EQ(c1 + std::complex<TNumber>(2, 3), Complex(3, 5));
 
+    EXPECT_EQ(2 + c1, Complex(3, 2));
+
     EXPECT_EQ(c1 += 2, Complex(3, 2));
     EXPECT_EQ(c1 += Complex(1, 2), Complex(4, 4));
     EXPECT_EQ(c1 += std::complex(1, 2), Complex(5, 6));
+}
+
+TEST(HephTest, Complex_SubOp)
+{
+    Complex c1(1, 2);
+        
+    EXPECT_EQ(c1 - 2, Complex(-1, 2));
+    EXPECT_EQ(c1 - Complex(2, 4), Complex(-1, -2));
+    EXPECT_EQ(c1 - std::complex<TNumber>(2, 4), Complex(-1, -2));
+
+    EXPECT_EQ(2 - c1, Complex(1, -2));
+
+    EXPECT_EQ(c1 -= 2, Complex(-1, 2));
+    EXPECT_EQ(c1 -= Complex(1, 2), Complex(-2, 0));
+    EXPECT_EQ(c1 -= std::complex(1, 2), Complex(-3, -2));
+}
+
+TEST(HephTest, Complex_MulOp)
+{
+    Complex c1(1, 2);
+        
+    EXPECT_EQ(c1 * 2, Complex(2, 4));
+    EXPECT_EQ(c1 * Complex(2, 4), Complex(-6, 8));
+    EXPECT_EQ(c1 * std::complex<TNumber>(2, 4), Complex(-6, 8));
+
+    EXPECT_EQ(2 * c1, Complex(2, 4));
+
+    EXPECT_EQ(c1 *= 2, Complex(2, 4));
+    EXPECT_EQ(c1 *= Complex(1, 2), Complex(-6, 8));
+    EXPECT_EQ(c1 *= std::complex(1, 2), Complex(-22, -4));
+}
+
+TEST(HephTest, Complex_DivOp)
+{
+    constexpr double epsilon = 1e-6;
+    Complex c1(8, 16);
+        
+    EXPECT_EQ(c1 / 2, Complex(4, 8));
+    EXPECT_EQ(c1 / Complex(3, 5), Complex(52.0/17, 4.0/17));
+    EXPECT_EQ(c1 / std::complex<TNumber>(3, 5), Complex(52.0/17, 4.0/17));
+
+    EXPECT_NEAR((2 / c1).real, 0.05, epsilon);
+    EXPECT_NEAR((2 / c1).imag, -0.1, epsilon);
+
+    EXPECT_EQ(c1 /= 2, Complex(4, 8));
+
+    c1 /= Complex(1, 3);
+    EXPECT_NEAR(c1.real, 2.8, epsilon);
+    EXPECT_NEAR(c1.imag, -0.4, epsilon);
+    
+    c1 /= std::complex(1, 3);
+    EXPECT_NEAR(c1.real, 0.16, epsilon);
+    EXPECT_NEAR(c1.imag, -0.88, epsilon);
 }
 
 TEST(HephTest, Complex_Compare)
