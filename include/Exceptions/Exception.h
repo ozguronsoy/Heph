@@ -98,7 +98,7 @@ namespace Heph
 
     public:
         /**
-         * Inserts the exception to output stream.
+         * Inserts the exception to the output stream.
          *
          * @param os Output stream.
          * @param ex Exception.

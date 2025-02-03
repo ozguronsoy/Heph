@@ -62,6 +62,68 @@ namespace Heph
         endian = (endian == std::endian::little) ? (std::endian::big) : (std::endian::little);
         return Heph::SwapEndian<T>(data);
     }
+
+    /**
+     * Converts data from native endian to little endian.
+     * @note This method does nothing if native endianness is little.
+     * 
+     * @tparam T Type of the data.
+     * @param data Data to be processed.
+     * @return Data as little endian.
+     */
+    template<typename T>
+    inline constexpr T NativeToLittleEndian(T data)
+    {
+        if constexpr (std::endian::native == std::endian::little)
+            return data;
+        else
+            return Heph::SwapEndian(data);
+    }
+
+    /**
+     * Converts data from native endian to big endian.
+     * @note This method does nothing if native endianness is big.
+     * 
+     * @tparam T Type of the data.
+     * @param data Data to be processed.
+     * @return Data as big endian.
+     */
+    template<typename T>
+    inline constexpr T NativeToBigEndian(T data)
+    {
+        if constexpr (std::endian::native == std::endian::big)
+            return data;
+        else
+            return Heph::SwapEndian(data);
+    }
+
+    /**
+     * Converts data from little endian to native endian.
+     * @note This method does nothing if native endianness is little.
+     * 
+     * @tparam T Type of the data.
+     * @param data Data to be processed.
+     * @return Data as native endian.
+     */
+    template<typename T>
+    inline constexpr T LittleEndianToNative(T data)
+    {
+        return Heph::NativeToLittleEndian(data);
+    }
+
+    /**
+     * Converts data from big endian to native endian.
+     * @note This method does nothing if native endianness is big.
+     * 
+     * @tparam T Type of the data.
+     * @param data Data to be processed.
+     * @return Data as native endian.
+     */
+    template<typename T>
+    inline constexpr T BigEndianToNative(T data)
+    {
+        return Heph::NativeToBigEndian(data);
+    }
 }
 
 #endif

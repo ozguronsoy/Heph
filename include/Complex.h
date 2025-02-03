@@ -136,7 +136,7 @@ namespace Heph
             return Complex(this->real + rhs, this->imag);
         }
 
-        /** @copydoc operator+(const Complex<TRhsNumber>&) */
+        /** @copydoc operator+(const Complex<TRhsNumber>&) const */
         template<typename TRhsNumber>
         constexpr Complex operator+(const std::complex<TRhsNumber>& rhs) const
         {
@@ -203,7 +203,7 @@ namespace Heph
             return Complex(this->real - rhs, this->imag);
         }
 
-        /** @copydoc operator-(const Complex<TRhsNumber>&) */
+        /** @copydoc operator-(const Complex<TRhsNumber>&) const*/
         template<typename TRhsNumber>
         constexpr Complex operator-(const std::complex<TRhsNumber>& rhs) const
         {
@@ -270,7 +270,7 @@ namespace Heph
             return Complex(this->real * rhs, this->imag * rhs);
         }
 
-        /** @copydoc operator*(const Complex<TRhsNumber>&) */
+        /** @copydoc operator*(const Complex<TRhsNumber>&) const */
         template<typename TRhsNumber>
         constexpr Complex operator*(const std::complex<TRhsNumber>& rhs) const
         {
@@ -342,7 +342,7 @@ namespace Heph
             return Complex(this->real / rhs, this->imag / rhs);
         }
 
-        /** @copydoc operator/(const Complex<TRhsNumber>&) */
+        /** @copydoc operator/(const Complex<TRhsNumber>&) const */
         template<typename TRhsNumber>
         constexpr Complex operator/(const std::complex<TRhsNumber>& rhs) const
         {
@@ -418,7 +418,7 @@ namespace Heph
             return (this->real == rhs.real) && (this->imag == rhs.imag);
         }
 
-        /** @copydoc operator==(const Complex<TRhsNumber>&) */
+        /** @copydoc operator==(const Complex<TRhsNumber>&) const */
         template<typename TRhsNumber>
         constexpr bool operator==(const std::complex<TRhsNumber>& rhs) const
         {
@@ -438,7 +438,7 @@ namespace Heph
             return !((*this) == rhs);
         }
 
-        /** @copydoc operator!=(const Complex<TRhsNumber>&) */
+        /** @copydoc operator!=(const Complex<TRhsNumber>&) const */
         template<typename TRhsNumber>
         constexpr bool operator!=(const std::complex<TRhsNumber>& rhs) const
         {
@@ -471,7 +471,7 @@ namespace Heph
         }
 
         /**
-         * Inserts the complex number to the provided output stream.
+         * Inserts the complex number to the output stream.
          *
          * @param os Output stream.
          * @param c Complex number.
