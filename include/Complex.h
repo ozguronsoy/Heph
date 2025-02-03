@@ -2,8 +2,8 @@
 #define HEPH_COMPLEX_H
 
 #include "HephShared.h"
+#include "Concepts.h"
 #include "Exceptions/InvalidArgumentException.h"
-#include <type_traits>
 #include <complex>
 #include <cmath>
 #include <iostream>
@@ -17,11 +17,10 @@ namespace Heph
      *
      * @tparam TNumber Type of the real and imaginary numbers.
      */
-    template<typename TNumber>
+    template<Primitive TNumber>
+        requires (!std::is_void_v<TNumber>)
     struct HEPH_API Complex
     {
-        static_assert(std::is_integral_v<TNumber> || std::is_floating_point_v<TNumber>, "TNumber must be a primitive type.");
-
         /** @brief real part of the complex number. */
         TNumber real;
         /** @brief imaginary part of the complex number. */
@@ -137,7 +136,8 @@ namespace Heph
         }
 
         /** @copydoc operator+(const Complex<TRhsNumber>&) const */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex operator+(const std::complex<TRhsNumber>& rhs) const
         {
             return Complex(this->real + rhs.real(), this->imag + rhs.imag());
@@ -150,7 +150,7 @@ namespace Heph
          * @param rhs Complex number to add.
          * @return Result of the operation.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex operator+(const Complex<TRhsNumber>& rhs) const
         {
             return Complex(this->real + rhs.real, this->imag + rhs.imag);
@@ -169,7 +169,8 @@ namespace Heph
         }
 
         /** @copydoc operator+=(const Complex<TRhsNumber>&) */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex& operator+=(const std::complex<TRhsNumber>& rhs)
         {
             this->real += rhs.real();
@@ -184,7 +185,7 @@ namespace Heph
          * @param rhs Complex number to add.
          * @return Reference to current instance.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex& operator+=(const Complex<TRhsNumber>& rhs)
         {
             this->real += rhs.real;
@@ -204,7 +205,8 @@ namespace Heph
         }
 
         /** @copydoc operator-(const Complex<TRhsNumber>&) const*/
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex operator-(const std::complex<TRhsNumber>& rhs) const
         {
             return Complex(this->real - rhs.real(), this->imag - rhs.imag());
@@ -217,7 +219,7 @@ namespace Heph
          * @param rhs Complex number to subtract.
          * @return Result of the operation.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex operator-(const Complex<TRhsNumber>& rhs) const
         {
             return Complex(this->real - rhs.real, this->imag - rhs.imag);
@@ -236,7 +238,8 @@ namespace Heph
         }
 
         /** @copydoc operator-=(const Complex<TRhsNumber>&) */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex& operator-=(const std::complex<TRhsNumber>& rhs)
         {
             this->real -= rhs.real();
@@ -251,7 +254,7 @@ namespace Heph
          * @param rhs Complex number to subtract.
          * @return Reference to current instance.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex& operator-=(const Complex<TRhsNumber>& rhs)
         {
             this->real -= rhs.real;
@@ -271,7 +274,8 @@ namespace Heph
         }
 
         /** @copydoc operator*(const Complex<TRhsNumber>&) const */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex operator*(const std::complex<TRhsNumber>& rhs) const
         {
             return Complex(
@@ -287,7 +291,7 @@ namespace Heph
          * @param rhs Complex number to multiply.
          * @return Result of the operation.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex operator*(const Complex<TRhsNumber>& rhs) const
         {
             return Complex(
@@ -310,7 +314,8 @@ namespace Heph
         }
 
         /** @copydoc operator*=(const Complex<TRhsNumber>&) */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex& operator*=(const std::complex<TRhsNumber>& rhs)
         {
             *this = (*this) * rhs;
@@ -324,7 +329,7 @@ namespace Heph
          * @param rhs Complex number to multiply.
          * @return Reference to current instance.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex& operator*=(const Complex<TRhsNumber>& rhs)
         {
             *this = (*this) * rhs;
@@ -343,7 +348,8 @@ namespace Heph
         }
 
         /** @copydoc operator/(const Complex<TRhsNumber>&) const */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex operator/(const std::complex<TRhsNumber>& rhs) const
         {
             const TRhsNumber denomiter = rhs.real() * rhs.real() + rhs.imag() * rhs.imag();
@@ -360,7 +366,7 @@ namespace Heph
          * @param rhs Complex number to divide by.
          * @return Result of the operation.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex operator/(const Complex<TRhsNumber>& rhs) const
         {
             const TRhsNumber denomiter = rhs.MagnitudeSquared();
@@ -384,7 +390,8 @@ namespace Heph
         }
 
         /** @copydoc operator/=(const Complex<TRhsNumber>&) */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr Complex& operator/=(const std::complex<TRhsNumber>& rhs)
         {
             *this = (*this) / rhs;
@@ -398,7 +405,7 @@ namespace Heph
          * @param rhs Complex number to divide.
          * @return Reference to current instance.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr Complex& operator/=(const Complex<TRhsNumber>& rhs)
         {
             *this = (*this) / rhs;
@@ -412,14 +419,15 @@ namespace Heph
          * @param rhs Number to compare.
          * @return true if both numbers have the same value, otherwise false.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr bool operator==(const Complex<TRhsNumber>& rhs) const
         {
             return (this->real == rhs.real) && (this->imag == rhs.imag);
         }
 
         /** @copydoc operator==(const Complex<TRhsNumber>&) const */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr bool operator==(const std::complex<TRhsNumber>& rhs) const
         {
             return (this->real == rhs.real()) && (this->imag == rhs.imag());
@@ -432,14 +440,15 @@ namespace Heph
          * @param rhs Number to compare.
          * @return false if both numbers have the same value, otherwise true.
          */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
         constexpr bool operator!=(const Complex<TRhsNumber>& rhs) const
         {
             return !((*this) == rhs);
         }
 
         /** @copydoc operator!=(const Complex<TRhsNumber>&) const */
-        template<typename TRhsNumber>
+        template<Primitive TRhsNumber>
+            requires (!std::is_void_v<TRhsNumber>)
         constexpr bool operator!=(const std::complex<TRhsNumber>& rhs) const
         {
             return !((*this) == rhs);
@@ -510,7 +519,7 @@ namespace Heph
  * @param rhs Complex number.
  * @return Result of the operation.
  */
-template<typename TLhs, typename TRhsNumber>
+template<Heph::Primitive TLhs, Heph::Primitive TRhsNumber>
 constexpr inline Heph::Complex<TRhsNumber> operator+(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
 {
     return rhs + lhs;
@@ -525,7 +534,7 @@ constexpr inline Heph::Complex<TRhsNumber> operator+(TLhs lhs, const Heph::Compl
  * @param rhs Complex number.
  * @return Result of the operation.
  */
-template<typename TLhs, typename TRhsNumber>
+template<Heph::Primitive TLhs, Heph::Primitive TRhsNumber>
 constexpr inline Heph::Complex<TRhsNumber> operator-(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
 {
     return Heph::Complex<TRhsNumber>(lhs - rhs.real, -rhs.imag);
@@ -540,7 +549,7 @@ constexpr inline Heph::Complex<TRhsNumber> operator-(TLhs lhs, const Heph::Compl
  * @param rhs Complex number.
  * @return Result of the operation.
  */
-template<typename TLhs, typename TRhsNumber>
+template<Heph::Primitive TLhs, Heph::Primitive TRhsNumber>
 constexpr inline Heph::Complex<TRhsNumber> operator*(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
 {
     return rhs * lhs;
@@ -555,7 +564,7 @@ constexpr inline Heph::Complex<TRhsNumber> operator*(TLhs lhs, const Heph::Compl
  * @param rhs Complex number.
  * @return Result of the operation.
  */
-template<typename TLhs, typename TRhsNumber>
+template<Heph::Primitive TLhs, Heph::Primitive TRhsNumber>
 constexpr inline Heph::Complex<TRhsNumber> operator/(TLhs lhs, const Heph::Complex<TRhsNumber>& rhs)
 {
     return Heph::Complex<TRhsNumber>(lhs, 0) / rhs;
