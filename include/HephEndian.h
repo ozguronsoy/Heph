@@ -36,7 +36,7 @@ namespace Heph
      * @return Byte swapped data.
      */
     template<typename T>
-    inline constexpr T SwapEndian(T data)
+    constexpr inline T SwapEndian(T data)
     {
         static_assert(sizeof(T) != 1, "sizeof T must be greater than 1.");
         static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "T must be a primitive type.");
@@ -57,7 +57,7 @@ namespace Heph
      * @return Byte swapped data.
      */
     template<typename T>
-    inline constexpr T SwapEndian(T data, std::endian& endian)
+    constexpr inline T SwapEndian(T data, std::endian& endian)
     {
         endian = (endian == std::endian::little) ? (std::endian::big) : (std::endian::little);
         return Heph::SwapEndian<T>(data);
@@ -72,7 +72,7 @@ namespace Heph
      * @return Data as little endian.
      */
     template<typename T>
-    inline constexpr T NativeToLittleEndian(T data)
+    constexpr inline T NativeToLittleEndian(T data)
     {
         if constexpr (std::endian::native == std::endian::little)
             return data;
@@ -89,7 +89,7 @@ namespace Heph
      * @return Data as big endian.
      */
     template<typename T>
-    inline constexpr T NativeToBigEndian(T data)
+    constexpr inline T NativeToBigEndian(T data)
     {
         if constexpr (std::endian::native == std::endian::big)
             return data;
@@ -106,7 +106,7 @@ namespace Heph
      * @return Data as native endian.
      */
     template<typename T>
-    inline constexpr T LittleEndianToNative(T data)
+    constexpr inline T LittleEndianToNative(T data)
     {
         return Heph::NativeToLittleEndian(data);
     }
@@ -120,7 +120,7 @@ namespace Heph
      * @return Data as native endian.
      */
     template<typename T>
-    inline constexpr T BigEndianToNative(T data)
+    constexpr inline T BigEndianToNative(T data)
     {
         return Heph::NativeToBigEndian(data);
     }
