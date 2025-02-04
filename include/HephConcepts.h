@@ -2,15 +2,15 @@
 #define HEPH_CONCEPTS_H
 
 #include "HephShared.h"
-#include <type_traits>
+#include <concepts>
 
 /** @file */
 
 namespace Heph
 {
-    /** @brief Indicates T must be a primitive (basic) type. */
+    /** @brief Indicates that T is a primitive (basic) type. */
     template<typename T>
-    concept Primitive = std::is_void_v<T> || std::is_integral_v<T> || std::is_floating_point_v<T>;
+    concept Primitive = std::is_void_v<T> || std::integral<T> || std::floating_point<T>;
 
     /** 
      * @brief Indicates that there is a valid addition operator overload such that takes an object of type ``TLhs`` as the left operand, 

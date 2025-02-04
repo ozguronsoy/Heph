@@ -2,7 +2,7 @@
 #define HEPH_COMPLEX_H
 
 #include "HephShared.h"
-#include "Concepts.h"
+#include "HephConcepts.h"
 #include "Exceptions/InvalidArgumentException.h"
 #include <complex>
 #include <cmath>

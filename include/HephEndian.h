@@ -2,7 +2,7 @@
 #define HEPH_ENDIAN_H
 
 #include "HephShared.h"
-#include "Concepts.h"
+#include "HephConcepts.h"
 #include <bit>
 
 /** @file */
@@ -28,10 +28,6 @@
 
 namespace Heph
 {
-    /** @brief Indicates T must be a primitive type and sizeof(T) must be greater than one. */
-    template<typename T>
-    concept EndianSwappable = Primitive<T> && sizeof(T) > 1;
-
     /**
      * Swaps the bytes of the data and returns the result as a new instance.
      *
@@ -39,7 +35,8 @@ namespace Heph
      * @param data Data to be processed.
      * @return Byte swapped data.
      */
-    template<EndianSwappable T>
+    template<Primitive T>
+        requires (sizeof(T) > 1)
     constexpr inline T SwapEndian(T data)
     {
         if constexpr (sizeof(T) == 2) return HEPH_SWAP_ENDIAN_16(data);
@@ -57,7 +54,8 @@ namespace Heph
      * @param endian Current endianness of the data.
      * @return Byte swapped data.
      */
-    template<EndianSwappable T>
+    template<Primitive T>
+        requires (sizeof(T) > 1)
     constexpr inline T SwapEndian(T data, std::endian& endian)
     {
         endian = (endian == std::endian::little) ? (std::endian::big) : (std::endian::little);
@@ -72,7 +70,8 @@ namespace Heph
      * @param data Data to be processed.
      * @return Data as little endian.
      */
-    template<EndianSwappable T>
+    template<Primitive T>
+        requires (sizeof(T) > 1)
     constexpr inline T NativeToLittleEndian(T data)
     {
         if constexpr (std::endian::native == std::endian::little)
@@ -89,7 +88,8 @@ namespace Heph
      * @param data Data to be processed.
      * @return Data as big endian.
      */
-    template<EndianSwappable T>
+    template<Primitive T>
+        requires (sizeof(T) > 1)
     constexpr inline T NativeToBigEndian(T data)
     {
         if constexpr (std::endian::native == std::endian::big)
@@ -106,7 +106,8 @@ namespace Heph
      * @param data Data to be processed.
      * @return Data as native endian.
      */
-    template<EndianSwappable T>
+    template<Primitive T>
+        requires (sizeof(T) > 1)
     constexpr inline T LittleEndianToNative(T data)
     {
         return Heph::NativeToLittleEndian(data);
@@ -120,7 +121,8 @@ namespace Heph
      * @param data Data to be processed.
      * @return Data as native endian.
      */
-    template<EndianSwappable T>
+    template<Primitive T>
+        requires (sizeof(T) > 1)
     constexpr inline T BigEndianToNative(T data)
     {
         return Heph::NativeToBigEndian(data);
