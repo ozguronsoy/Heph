@@ -100,6 +100,7 @@ namespace Heph
         friend std::istream& operator>>(std::istream& is, UUID& uuid);
 
         friend std::formatter<UUID, char>;
+        friend std::hash<UUID>;
     };
 }
 
@@ -107,12 +108,12 @@ namespace Heph
 template<>
 struct std::formatter<Heph::UUID, char>
 {
-    constexpr auto parse(std::format_parse_context& ctx)
+    constexpr std::format_parse_context::iterator parse(std::format_parse_context& ctx)
     {
         return ctx.begin();
     }
 
-    constexpr auto format(const Heph::UUID& uuid, std::format_context& ctx) const
+    constexpr std::format_context::iterator format(const Heph::UUID& uuid, std::format_context& ctx) const
     {
         return std::format_to(ctx.out(),
             "{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
@@ -122,6 +123,18 @@ struct std::formatter<Heph::UUID, char>
             uuid.data[8], uuid.data[9],
             uuid.data[10], uuid.data[11], uuid.data[12], uuid.data[13], uuid.data[14], uuid.data[15]
         );
+    }
+};
+
+/** @brief Hash support for Heph::UUID. */
+template<>
+struct std::hash<Heph::UUID>
+{
+    size_t operator()(const Heph::UUID& uuid) const
+    {
+        const uint64_t* data = reinterpret_cast<const uint64_t*>(uuid.data.data());
+        std::hash<uint64_t> hash;
+        return hash(data[0]) ^ hash(data[1]);
     }
 };
 

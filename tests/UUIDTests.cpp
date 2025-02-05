@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "UUID.h"
 #include "Exceptions/InvalidArgumentException.h"
+#include <unordered_map>
 
 TEST(HephTest, UUID)
 {
@@ -56,5 +57,16 @@ TEST(HephTest, UUID)
         EXPECT_THROW(uuid = invalidHexStr1, Heph::InvalidArgumentException);
         EXPECT_THROW(uuid = invalidHexStr2, Heph::InvalidArgumentException);
         EXPECT_THROW(uuid = invalidHexStr3, Heph::InvalidArgumentException);
+    }
+
+    {
+        const Heph::UUID uuid1 = Heph::UUID::Create();
+        const Heph::UUID uuid2 = Heph::UUID::Create();
+        std::unordered_map<Heph::UUID, int> map;
+
+        map[uuid1] = 15;
+        map[uuid2] = 30;
+        EXPECT_EQ(map[uuid1], 15);
+        EXPECT_EQ(map[uuid2], 30);
     }
 }
