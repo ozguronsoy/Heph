@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "UUID.h"
+#include "Exceptions/InvalidArgumentException.h"
 
 TEST(HephTest, UUID)
 {
@@ -43,5 +44,17 @@ TEST(HephTest, UUID)
 
         EXPECT_EQ(static_cast<std::wstring>(uuid), hexStr);
         EXPECT_EQ(Heph::UUID(static_cast<std::wstring>(uuid)), uuid);
+    }
+
+    {
+        const std::string invalidHexStr1 = "7CF1D2FF-BA63-4724-BD2B-459264826A9"; // invalid size
+        const std::string invalidHexStr2 = "7CF1D2FF-BA63-4724-BD2B*459264826A95"; // invalid dash
+        const std::string invalidHexStr3 = "7CF1D2FF-BA63-4724-BDVB-459264826A95"; // invalid char
+
+        Heph::UUID uuid("7CF1D2FF-BA63-4724-BD2B-459264826A95");
+
+        EXPECT_THROW(uuid = invalidHexStr1, Heph::InvalidArgumentException);
+        EXPECT_THROW(uuid = invalidHexStr2, Heph::InvalidArgumentException);
+        EXPECT_THROW(uuid = invalidHexStr3, Heph::InvalidArgumentException);
     }
 }

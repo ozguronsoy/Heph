@@ -2,24 +2,26 @@
 #define HEPH_UUID_H
 
 #include "HephShared.h"
+#include "HephEndian.h"
 #include <cstdint>
 #include <array>
 #include <string>
 #include <iostream>
+#include <format>
 
 #ifdef _WIN32
 #include <comdef.h>
 #elif defined(__ANDROID__)
 #include "AndroidHelpers.h"
 #else
-#error unsupported platform, please provide UUID implementation.
+#error unsupported platform.
 #endif
 
 /** @file */
 
 namespace Heph
 {
-    /** @brief Class for creating and storing UUIDs.   */
+    /** @brief Class for generating and storing UUIDs. */
     class HEPH_API UUID final
     {
     public:
@@ -71,15 +73,7 @@ namespace Heph
          * @param rhs UUID to compare.
          * @return true if both UUIDs have the same value, otherwise false.
          */
-        bool operator==(const UUID& rhs) const;
-
-        /**
-         * Compares two UUIDs.
-         *
-         * @param rhs UUID to compare.
-         * @return false if both UUIDs have the same value, otherwise true.
-         */
-        bool operator!=(const UUID& rhs) const;
+        bool operator==(const UUID& rhs) const = default;
 
         /** Generates new UUID via native methods. */
         void Generate();
@@ -104,7 +98,31 @@ namespace Heph
          * @return The input stream.
          */
         friend std::istream& operator>>(std::istream& is, UUID& uuid);
+
+        friend std::formatter<UUID, char>;
     };
 }
+
+/** @brief Formatting support for Heph::UUID. */
+template<>
+struct std::formatter<Heph::UUID, char>
+{
+    constexpr auto parse(std::format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
+
+    constexpr auto format(const Heph::UUID& uuid, std::format_context& ctx) const
+    {
+        return std::format_to(ctx.out(),
+            "{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+            uuid.data[0], uuid.data[1], uuid.data[2], uuid.data[3],
+            uuid.data[4], uuid.data[5],
+            uuid.data[6], uuid.data[7],
+            uuid.data[8], uuid.data[9],
+            uuid.data[10], uuid.data[11], uuid.data[12], uuid.data[13], uuid.data[14], uuid.data[15]
+        );
+    }
+};
 
 #endif

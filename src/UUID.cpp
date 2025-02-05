@@ -1,10 +1,9 @@
 #include "UUID.h"
-#include "HephEndian.h"
 #include "Exceptions/ExternalException.h"
 #include "Exceptions/InvalidArgumentException.h"
-#include <format>
 #include <sstream>
 #include <iomanip>
+#include <ctype.h>
 
 #ifdef _WIN32
 #include "WinHelpers.h"
@@ -39,9 +38,9 @@ namespace Heph
 #ifdef _WIN32
 
         Native temp;
-        temp.Data1 = Heph::NativeToBigEndian(nativeUUID.Data1);
-        temp.Data2 = Heph::NativeToBigEndian(nativeUUID.Data2);
-        temp.Data3 = Heph::NativeToBigEndian(nativeUUID.Data3);
+        temp.Data1 = Heph::SwapEndian(nativeUUID.Data1);
+        temp.Data2 = Heph::SwapEndian(nativeUUID.Data2);
+        temp.Data3 = Heph::SwapEndian(nativeUUID.Data3);
 
         (void)std::copy((uint8_t*)&temp.Data1, (uint8_t*)(&temp.Data1 + 1), this->data.data());
         (void)std::copy((uint8_t*)&temp.Data2, (uint8_t*)(&temp.Data2 + 1), this->data.data() + 4);
@@ -72,12 +71,24 @@ namespace Heph
 
         for (size_t i = 0; i < this->data.size(); ++i)
         {
-            if (i == 4 || i == 6 || i == 8 || i == 10) iss.ignore(1); // discard dash 
+            if (i == 4 || i == 6 || i == 8 || i == 10)
+            {
+                iss >> byteStr[0]; // discard dash
+                if (byteStr[0] != '-')
+                {
+                    HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid UUID string.");
+                }
+            }
 
             // iss cannot read byte hex, but can read int hex.
             // Hence extract one-byte hex as string (e.g., extract "A5" from "A52E4FDC") and
             // convert it.  
             iss >> byteStr[0] >> byteStr[1];
+
+            if (!std::all_of(byteStr.data(), byteStr.data() + 2, ::isxdigit))
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid UUID string.");
+            }
 
             // reset the byteIss.
             byteIss.str(byteStr.data());
@@ -101,9 +112,9 @@ namespace Heph
 
 #ifdef _WIN32
 
-        nativeUUID.Data1 = Heph::BigEndianToNative(*reinterpret_cast<const unsigned long*>(this->data.data()));
-        nativeUUID.Data2 = Heph::BigEndianToNative(*reinterpret_cast<const unsigned short*>(this->data.data() + 4));
-        nativeUUID.Data3 = Heph::BigEndianToNative(*reinterpret_cast<const unsigned short*>(this->data.data() + 6));
+        nativeUUID.Data1 = Heph::SwapEndian(*reinterpret_cast<const unsigned long*>(this->data.data()));
+        nativeUUID.Data2 = Heph::SwapEndian(*reinterpret_cast<const unsigned short*>(this->data.data() + 4));
+        nativeUUID.Data3 = Heph::SwapEndian(*reinterpret_cast<const unsigned short*>(this->data.data() + 6));
         (void)std::copy(this->data.data() + 8, this->data.data() + this->data.size(), nativeUUID.Data4);
 
 #elif defined(__ANDROID__)
@@ -118,35 +129,13 @@ namespace Heph
 
     UUID::operator std::string() const
     {
-        return std::format("{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
-            this->data[0], this->data[1], this->data[2], this->data[3],
-            this->data[4], this->data[5],
-            this->data[6], this->data[7],
-            this->data[8],
-            this->data[9],
-            this->data[10],
-            this->data[11],
-            this->data[12],
-            this->data[13],
-            this->data[14],
-            this->data[15]
-        );
+        return std::format("{}", *this);
     }
 
     UUID::operator std::wstring() const
     {
         const std::string uuidStr = static_cast<std::string>(*this);
         return std::wstring(uuidStr.begin(), uuidStr.end());
-    }
-
-    bool UUID::operator==(const UUID& rhs) const
-    {
-        return this->data == rhs.data;
-    }
-
-    bool UUID::operator!=(const UUID& rhs) const
-    {
-        return this->data != rhs.data;
     }
 
     void UUID::Generate()

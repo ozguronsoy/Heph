@@ -87,6 +87,35 @@ namespace Heph
 
     /** @copydoc Heph::Version */
     extern HEPH_API const Version version;
+
+    /** @brief Defines the supported platforms. */
+    enum class Platform
+    {
+        /** @brief Represents the Windows operating system. */
+        Windows,
+        /** @brief Represents the Android operating system. */
+        Android,
+        /** @brief Represents the Linux operating system. */
+        Linux,
+        /** @brief Represents the Darwin operating system (macOS, iOS, iPadOS, etc.). */
+        Darwin,
+        /** @brief Fallback value for unsupported platforms. */
+        Unknown = -1,
+
+        /** @brief Represents the platform the application is currently being compiled for. */
+#ifdef _WIN32
+        Current = Platform::Windows,
+#elif defined(__ANDROID__)
+        Current = Platform::Android,
+#elif defined(__linux__)
+        Current = Platform::Linux,
+#elif defined(__APPLE__)
+        Current = Platform::Darwin,
+#else
+        Current = Platform::Unknown,
+#endif
+
+    };
 }
 
 /** @defgroup default_constructor
