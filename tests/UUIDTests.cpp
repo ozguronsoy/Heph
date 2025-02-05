@@ -16,7 +16,7 @@ TEST(HephTest, UUID)
 
     {
         const Heph::UUID uuid1 = Heph::UUID::Create();
-        const NativeUUID native = uuid1;
+        const Heph::UUID::Native native = uuid1;
         Heph::UUID uuid2(native);
         
         EXPECT_EQ(uuid1, uuid2);

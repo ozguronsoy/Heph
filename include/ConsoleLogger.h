@@ -1,4 +1,6 @@
-#pragma once
+#ifndef HEPH_CONSOLE_LOGGER_H
+#define HEPH_CONSOLE_LOGGER_H
+
 #include "HephShared.h"
 #include <string>
 
@@ -99,3 +101,5 @@ namespace Heph
 		static std::string GetLogLevelName(const char* logLevel);
 	};
 }
+
+#endif

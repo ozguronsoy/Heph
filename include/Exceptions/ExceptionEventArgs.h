@@ -1,5 +1,5 @@
-#ifndef HEPH_EXCEPTION_EVENT_ARGS
-#define HEPH_EXCEPTION_EVENT_ARGS
+#ifndef HEPH_EXCEPTION_EVENT_ARGS_H
+#define HEPH_EXCEPTION_EVENT_ARGS_H
 #include "HephShared.h"
 #include "EventArgs.h"
 

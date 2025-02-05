@@ -1,5 +1,5 @@
-#ifndef HEPH_EVENT_PARAMS
-#define HEPH_EVENT_PARAMS
+#ifndef HEPH_EVENT_PARAMS_H
+#define HEPH_EVENT_PARAMS_H
 
 #include "HephShared.h"
 #include "EventArgs.h"

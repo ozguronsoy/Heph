@@ -8,3 +8,5 @@
 #include "Exceptions/NotImplementedException.h"
 #include "Exceptions/NotSupportedException.h"
 #include "Exceptions/TimeoutException.h"
+
+/** @file */

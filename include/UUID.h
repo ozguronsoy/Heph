@@ -9,7 +9,8 @@
 
 #ifdef _WIN32
 #include <comdef.h>
-typedef GUID NativeUUID;
+#elif defined(__ANDROID__)
+#include "AndroidHelpers.h"
 #else
 #error unsupported platform, please provide UUID implementation.
 #endif
@@ -21,6 +22,13 @@ namespace Heph
     /** @brief Class for creating and storing UUIDs.   */
     class HEPH_API UUID final
     {
+    public:
+        /** @brief Native UUID type used by the target platform. */
+#ifdef _WIN32
+        using Native = GUID;
+#elif defined(__ANDROID__)
+        using Native = jstring;
+#endif
     private:
         /** Actual UUID data. */
         std::array<uint8_t, 16> data;
@@ -31,14 +39,14 @@ namespace Heph
 
         /**
          * @copydoc constructor
-         * 
+         *
          * @param nativeUUID Native UUID to copy.
          */
-        UUID(const NativeUUID& nativeUUID);
+        UUID(const Native& nativeUUID);
 
         /**
          * @copydoc constructor
-         * 
+         *
          * @param uuidStr UUID string.
          */
         explicit UUID(const std::string& uuidStr);
@@ -46,12 +54,12 @@ namespace Heph
         /** @copydoc UUID(const std::string&) */
         explicit UUID(const std::wstring& uuidStr);
 
-        UUID& operator=(const NativeUUID& nativeUUID);
+        UUID& operator=(const Native& nativeUUID);
         UUID& operator=(const std::string& uuidStr);
         UUID& operator=(const std::wstring& uuidStr);
 
         /** Converts Heph::UUID to native. */
-        operator NativeUUID() const;
+        operator Native() const;
         /** Converts UUID to string. */
         explicit operator std::string() const;
         /** Converts UUID to wide string. */

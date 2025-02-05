@@ -6,9 +6,10 @@
 #include <sstream>
 #include <iomanip>
 
-#if defined(_WIN32)
+#ifdef _WIN32
 #include "WinHelpers.h"
 #include <combaseapi.h>
+#elif defined(__ANDROID__)
 #endif
 
 namespace Heph
@@ -18,7 +19,7 @@ namespace Heph
         this->data.fill(0);
     }
 
-    UUID::UUID(const NativeUUID& nativeUUID)
+    UUID::UUID(const Native& nativeUUID)
     {
         (*this) = nativeUUID;
     }
@@ -33,11 +34,11 @@ namespace Heph
         (*this) = uuidStr;
     }
 
-    UUID& UUID::operator=(const NativeUUID& nativeUUID)
+    UUID& UUID::operator=(const Native& nativeUUID)
     {
 #ifdef _WIN32
 
-        NativeUUID temp;
+        Native temp;
         temp.Data1 = Heph::NativeToBigEndian(nativeUUID.Data1);
         temp.Data2 = Heph::NativeToBigEndian(nativeUUID.Data2);
         temp.Data3 = Heph::NativeToBigEndian(nativeUUID.Data3);
@@ -46,6 +47,11 @@ namespace Heph
         (void)std::copy((uint8_t*)&temp.Data2, (uint8_t*)(&temp.Data2 + 1), this->data.data() + 4);
         (void)std::copy((uint8_t*)&temp.Data3, (uint8_t*)(&temp.Data3 + 1), this->data.data() + 6);
         (void)std::copy(nativeUUID.Data4, nativeUUID.Data4 + 8, this->data.data() + 8);
+
+#elif defined(__ANDROID__)
+
+        JNIEnv* env = Heph::Native::AndroidHelpers::GetEnv();
+        (*this) = Heph::Native::AndroidHelpers::JStringToStdString(env, nativeUUID);
 
 #endif
 
@@ -67,7 +73,7 @@ namespace Heph
         for (size_t i = 0; i < this->data.size(); ++i)
         {
             if (i == 4 || i == 6 || i == 8 || i == 10) iss.ignore(1); // discard dash 
-            
+
             // iss cannot read byte hex, but can read int hex.
             // Hence extract one-byte hex as string (e.g., extract "A5" from "A52E4FDC") and
             // convert it.  
@@ -76,7 +82,7 @@ namespace Heph
             // reset the byteIss.
             byteIss.str(byteStr.data());
             byteIss.seekg(0);
-            
+
             byteIss >> std::hex >> byteVal;
             this->data[i] = static_cast<uint8_t>(byteVal);
         }
@@ -89,18 +95,25 @@ namespace Heph
         return (*this) = std::string(uuidStr.begin(), uuidStr.end());
     }
 
-    UUID::operator NativeUUID() const
+    UUID::operator Native() const
     {
+        Native nativeUUID;
+
 #ifdef _WIN32
 
-        NativeUUID nativeUUID;
         nativeUUID.Data1 = Heph::BigEndianToNative(*reinterpret_cast<const unsigned long*>(this->data.data()));
         nativeUUID.Data2 = Heph::BigEndianToNative(*reinterpret_cast<const unsigned short*>(this->data.data() + 4));
         nativeUUID.Data3 = Heph::BigEndianToNative(*reinterpret_cast<const unsigned short*>(this->data.data() + 6));
         (void)std::copy(this->data.data() + 8, this->data.data() + this->data.size(), nativeUUID.Data4);
-        return nativeUUID;
+
+#elif defined(__ANDROID__)
+
+        JNIEnv* env = Heph::Native::AndroidHelpers::GetEnv();
+        nativeUUID = Heph::Native::AndroidHelpers::StdStringToJString(env, static_cast<std::string>(*this));
 
 #endif
+
+        return nativeUUID;
     }
 
     UUID::operator std::string() const
@@ -138,19 +151,50 @@ namespace Heph
 
     void UUID::Generate()
     {
-        NativeUUID nativeUUID;
+        Native nativeUUID;
 
-#if defined(_WIN32)
+#ifdef _WIN32
 
         HRESULT hres = CoCreateGuid(&nativeUUID);
         if (hres != S_OK)
         {
             _com_error(hres).ErrorMessage();
-            HEPH_EXCEPTION_RAISE_AND_THROW(ExternalException, HEPH_FUNC, "Native create UUID method failed.", "COM", Native::ComErrorStr(hres));
+            HEPH_EXCEPTION_RAISE_AND_THROW(ExternalException, HEPH_FUNC, "Native create UUID method failed.", "COM", Heph::Native::WinHelpers::ComErrorStr(hres));
         }
-        (*this) = nativeUUID;
+
+#elif defined(__ANDROID__)
+
+        JNIEnv* env = Heph::Native::AndroidHelpers::GetEnv();
+
+        jclass uuidClass = env->FindClass("java/util/UUID");
+        if (uuidClass == nullptr)
+        {
+            HEPH_EXCEPTION_RAISE_AND_THROW(ExternalException, HEPH_FUNC, "UUID jclass not found.", "JNI", "");
+        }
+
+        jmethodID randomUUIDMethod = env->GetStaticMethodID(uuidClass, "randomUUID", "()Ljava/util/UUID;");
+        if (randomUUIDMethod == nullptr)
+        {
+            HEPH_EXCEPTION_RAISE_AND_THROW(ExternalException, HEPH_FUNC, "UUID::randomUUID jmethod not found.", "JNI", "");
+        }
+
+        jobject uuidObject = env->CallStaticObjectMethod(uuidClass, randomUUIDMethod);
+        if (uuidObject == nullptr)
+        {
+            HEPH_EXCEPTION_RAISE_AND_THROW(ExternalException, HEPH_FUNC, "Failed to call UUID::randomUUID jmethod.", "JNI", "");
+        }
+
+        jmethodID toStringMethod = env->GetMethodID(uuidClass, "toString", "()Ljava/lang/String;");
+        if (toStringMethod == nullptr)
+        {
+            HEPH_EXCEPTION_RAISE_AND_THROW(ExternalException, HEPH_FUNC, "Failed to call UUID::randomUUID jmethod.", "JNI", "");
+        }
+
+        nativeUUID = (jstring)env->CallObjectMethod(uuidObject, toStringMethod);
 
 #endif
+
+        (*this) = nativeUUID;
     }
 
     UUID UUID::Create()

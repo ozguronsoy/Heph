@@ -8,13 +8,13 @@
 
 namespace Heph
 {
-    /** @brief Indicates that T is a primitive (basic) type. */
+    /** @brief Specifies that a type is primitive (basic). */
     template<typename T>
     concept Primitive = std::is_void_v<T> || std::integral<T> || std::floating_point<T>;
 
-    /** 
-     * @brief Indicates that there is a valid addition operator overload such that takes an object of type ``TLhs`` as the left operand, 
-     * takes an object of type ``TRhs`` as the right operand, and type of the return value is convertible to ``TResult``. 
+    /**
+     * @brief Specifies that a valid addition operator overload exists, where the left operand is of type ``TLhs``,
+     * the right operand is of type ``TRhs``, and the return value is convertible to ``TResult``.
      */
     template<typename TLhs, typename TRhs = TLhs, typename TResult = TLhs>
     concept Addable = requires(TLhs lhs, TRhs rhs)
@@ -22,9 +22,19 @@ namespace Heph
         { lhs + rhs } -> std::convertible_to<TResult>;
     };
 
-    /** 
-     * @brief Indicates that there is a valid subtraction operator overload such that takes an object of type ``TLhs`` as the left operand, 
-     * takes an object of type ``TRhs`` as the right operand, and type of the return value is convertible to ``TResult``. 
+    /**
+     * @brief Specifies that a valid addition assignment operator overload exists,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``.
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept AddAssignable = requires(TLhs lhs, TRhs rhs)
+    {
+        { lhs += rhs } -> std::same_as<TLhs&>;
+    };
+
+    /**
+     * @brief Specifies that a valid subtraction operator overload exists, where the left operand is of type ``TLhs``,
+     * the right operand is of type ``TRhs``, and the return value is convertible to ``TResult``.
      */
     template<typename TLhs, typename TRhs = TLhs, typename TResult = TLhs>
     concept Subtractable = requires(TLhs lhs, TRhs rhs)
@@ -32,9 +42,19 @@ namespace Heph
         { lhs - rhs } -> std::convertible_to<TResult>;
     };
 
-    /** 
-     * @brief Indicates that there is a valid multiplication operator overload such that takes an object of type ``TLhs`` as the left operand, 
-     * takes an object of type ``TRhs`` as the right operand, and type of the return value is convertible to ``TResult``. 
+    /**
+     * @brief Specifies that a valid subtraction assignment operator overload exists,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``.
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept SubtractAssignable = requires(TLhs lhs, TRhs rhs)
+    {
+        { lhs -= rhs } -> std::same_as<TLhs&>;
+    };
+
+    /**
+     * @brief Specifies that a valid multiplication operator overload exists, where the left operand is of type ``TLhs``,
+     * the right operand is of type ``TRhs``, and the return value is convertible to ``TResult``.
      */
     template<typename TLhs, typename TRhs = TLhs, typename TResult = TLhs>
     concept Multipliable = requires(TLhs lhs, TRhs rhs)
@@ -42,9 +62,19 @@ namespace Heph
         { lhs * rhs } -> std::convertible_to<TResult>;
     };
 
-    /** 
-     * @brief Indicates that there is a valid division operator overload such that takes an object of type ``TLhs`` as the left operand, 
-     * takes an object of type ``TRhs`` as the right operand, and type of the return value is convertible to ``TResult``. 
+    /**
+     * @brief Specifies that a valid multiplication assignment operator overload exists,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``.
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept MultiplyAssignable = requires(TLhs lhs, TRhs rhs)
+    {
+        { lhs *= rhs } -> std::same_as<TLhs&>;
+    };
+
+    /**
+     * @brief Specifies that a valid division operator overload exists, where the left operand is of type ``TLhs``,
+     * the right operand is of type ``TRhs``, and the return value is convertible to ``TResult``.
      */
     template<typename TLhs, typename TRhs = TLhs, typename TResult = TLhs>
     concept Divisible = requires(TLhs lhs, TRhs rhs)
@@ -52,12 +82,30 @@ namespace Heph
         { lhs / rhs } -> std::convertible_to<TResult>;
     };
 
-    /** 
-     * @brief Indicates that there are valid arithmetic operator overloads such that takes an object of type ``TLhs`` as the left operand, 
-     * takes an object of type ``TRhs`` as the right operand, and type of the return value is convertible to ``TResult``. 
+    /**
+     * @brief Specifies that a valid division assignment operator overload exists,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``.
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept DivideAssignable = requires(TLhs lhs, TRhs rhs)
+    {
+        { lhs /= rhs } -> std::same_as<TLhs&>;
+    };
+
+    /**
+     * @brief Specifies that valid arithmetic operator overloads (``+``, ``-``, ``*``, and ``/``) exist,
+     * where the left operand is of type ``TLhs``, the right operand is of type ``TRhs``,
+     * and the return value is convertible to ``TResult``.
      */
     template<typename TLhs, typename TRhs = TLhs, typename TResult = TLhs>
-    concept Arithmetic = Addable<TLhs, TRhs, TResult> && Subtractable<TLhs, TRhs, TResult> && Multipliable<TLhs, TRhs, TResult> && Divisible<TLhs, TRhs, TResult>;
+    concept Arithmetic = Addable<TLhs, TRhs, TResult>&& Subtractable<TLhs, TRhs, TResult>&& Multipliable<TLhs, TRhs, TResult>&& Divisible<TLhs, TRhs, TResult>;
+
+    /**
+     * @brief Specifies that valid arithmetic assignment operator overloads (``+=``, ``-=``, ``*=``, and ``/=``) exist,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept ArithmeticAssignable = AddAssignable<TLhs, TRhs>&& SubtractAssignable<TLhs, TRhs>&& MultiplyAssignable<TLhs, TRhs>&& DivideAssignable<TLhs, TRhs>;
 }
 
 #endif

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef HEPH_EVENT_ARGS_H
+#define HEPH_EVENT_ARGS_H
+
 #include "HephShared.h"
 
 /** @file */
@@ -12,3 +14,5 @@ namespace Heph
 		virtual ~EventArgs() = default;
 	};
 }
+
+#endif
