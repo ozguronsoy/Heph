@@ -115,7 +115,7 @@ namespace Heph
 
 /** @brief Formatting support for Heph::UUID. */
 template<>
-struct std::formatter<Heph::UUID, char>
+struct HEPH_API std::formatter<Heph::UUID, char>
 {
     constexpr std::format_parse_context::iterator parse(std::format_parse_context& ctx)
     {
@@ -137,7 +137,7 @@ struct std::formatter<Heph::UUID, char>
 
 /** @brief Hash support for Heph::UUID. */
 template<>
-struct std::hash<Heph::UUID>
+struct HEPH_API std::hash<Heph::UUID>
 {
     size_t operator()(const Heph::UUID& uuid) const
     {
