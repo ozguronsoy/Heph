@@ -52,6 +52,10 @@ namespace Heph
         JNIEnv* env = Heph::Native::AndroidHelpers::GetEnv();
         (*this) = Heph::Native::AndroidHelpers::JStringToStdString(env, nativeUUID);
 
+#elif defined(__linux__)
+
+        (void)std::copy(nativeUUID.uuid, nativeUUID.uuid + 16, this->data.data());
+
 #endif
 
         return *this;
@@ -122,6 +126,10 @@ namespace Heph
         JNIEnv* env = Heph::Native::AndroidHelpers::GetEnv();
         nativeUUID = Heph::Native::AndroidHelpers::StdStringToJString(env, static_cast<std::string>(*this));
 
+#elif defined(__linux__)
+
+        (void)std::copy(this->data.begin(), this->data.end(), nativeUUID.uuid);
+
 #endif
 
         return nativeUUID;
@@ -180,6 +188,10 @@ namespace Heph
         }
 
         nativeUUID = (jstring)env->CallObjectMethod(uuidObject, toStringMethod);
+
+#elif defined(__linux__)
+
+        uuid_generate(nativeUUID.uuid);
 
 #endif
 

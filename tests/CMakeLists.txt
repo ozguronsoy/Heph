@@ -28,6 +28,7 @@ add_executable(
 
 target_link_libraries(
     HephTests
+    ${HEPH_LIBRARIES}
     gtest
     gtest_main
 )

@@ -51,6 +51,12 @@ file(GLOB_RECURSE HEPH_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp
 )
 
+set(HEPH_LIBRARIES)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(HEPH_LIBRARIES uuid)
+endif()
+
 if(HEPH_BUILD_DOCS)
     add_subdirectory(docs)
 endif()

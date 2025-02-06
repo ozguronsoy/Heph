@@ -13,6 +13,12 @@
 #include <comdef.h>
 #elif defined(__ANDROID__)
 #include "AndroidHelpers.h"
+#elif defined(__linux__)
+#include <uuid/uuid.h>
+struct __heph_uuid_t_wrapper
+{
+    uuid_t uuid;
+};
 #else
 #error unsupported platform.
 #endif
@@ -30,9 +36,12 @@ namespace Heph
         using Native = GUID;
 #elif defined(__ANDROID__)
         using Native = jstring;
+#elif defined(__linux__)
+        using Native = __heph_uuid_t_wrapper;
 #endif
+
     private:
-        /** Actual UUID data. */
+        /** UUID data in big-endian order. */
         std::array<uint8_t, 16> data;
 
     public:

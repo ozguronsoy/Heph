@@ -4,6 +4,9 @@
 #include "HephShared.h"
 #include "HephConcepts.h"
 #include <bit>
+#include <stdint.h>
+#include <stddef.h>
+#include <utility>
 
 /** @file */
 
@@ -43,7 +46,18 @@ namespace Heph
         else if constexpr (sizeof(T) == 3) return HEPH_SWAP_ENDIAN_24(data);
         else if constexpr (sizeof(T) == 4) return HEPH_SWAP_ENDIAN_32(data);
         else if constexpr (sizeof(T) == 8) return HEPH_SWAP_ENDIAN_64(data);
-        else static_assert (false, "invalid sizeof T.");
+        else
+        {
+            const size_t halfSize = sizeof(T) / 2;
+            uint8_t* pData = &data;
+
+            for (size_t i = 0; i < halfSize; ++i)
+            {
+                std::swap(pData[i], pData[sizeof(T) - i - 1]);
+            }
+
+            return data;
+        }
     }
 
     /**
