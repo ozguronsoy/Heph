@@ -70,6 +70,8 @@ namespace Heph
          * 
          * @param nativeUUID Native UUID to assign.
          * @return Reference to current instance.
+         * @exception InvalidOperationException
+         * @exception ExternalException
          */
         UUID& operator=(const Native& nativeUUID);
 
@@ -97,7 +99,12 @@ namespace Heph
          */
         UUID& operator=(const UUID& rhs);
 
-        /** Converts Heph::UUID to native. */
+        /** 
+         * Converts Heph::UUID to native. 
+         * 
+         * @exception InvalidOperationException
+         * @exception ExternalException
+         */
         operator Native() const;
         /** Converts UUID to string. */
         explicit operator std::string() const;
@@ -115,6 +122,7 @@ namespace Heph
         /** 
          * Generates new UUID via native methods.
          * 
+         * @exception InvalidOperationException
          * @exception ExternalException 
          */
         void Generate();

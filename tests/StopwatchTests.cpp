@@ -3,7 +3,7 @@
 #include <thread>
 #include <chrono>
 
-TEST(StopwatchTest, All)
+TEST(HephTest, Stopwatch)
 {
 	constexpr double sleepDuration_ms = 100;
 

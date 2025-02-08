@@ -15,7 +15,7 @@ namespace Heph
      */
     template<typename T>
         requires (std::is_enum_v<T> || std::is_scoped_enum_v<T>)
-    struct Enum final
+    struct HEPH_API Enum final
     {
         /** Value of the enum. */
         T value;
@@ -31,7 +31,7 @@ namespace Heph
 
         /**
          * Assigns the enum to current instance.
-         * 
+         *
          * @param rhs Enum to assign.
          * @return Reference to current instance.
          */
@@ -55,11 +55,88 @@ namespace Heph
         }
 
         /**
+         * Performs bitwise OR with ``rhs``.
+         *
+         * @param rhs Enum to or.
+         * @return Operation result.
+         */
+        constexpr Enum operator|(Enum rhs) const
+        {
+            if constexpr (std::is_scoped_enum_v<T>) return static_cast<T>(Enum::AsInt(this->value) | Enum::AsInt(rhs.value));
+            else return static_cast<T>(this->value | rhs.value);
+        }
+
+        /** @copydoc operator|(Enum) */
+        constexpr Enum operator|(T rhs) const
+        {
+            return (*this) | Enum(rhs);
+        }
+
+        /**
+         * Performs bitwise OR with ``rhs``.
+         *
+         * @param rhs Enum to or.
+         * @return Reference to current instance.
+         */
+        constexpr Enum& operator|=(Enum rhs)
+        {
+            *this = (*this) | rhs;
+            return *this;
+        }
+
+        /**
+         * Performs bitwise AND with ``rhs``.
+         *
+         * @param rhs Enum to and.
+         * @return Operation result.
+         */
+        constexpr Enum operator&(Enum rhs) const
+        {
+            if constexpr (std::is_scoped_enum_v<T>) return static_cast<T>(Enum::AsInt(this->value) & Enum::AsInt(rhs.value));
+            else return static_cast<T>(this->value & rhs.value);
+        }
+
+        /** @copydoc operator&(Enum) */
+        constexpr Enum operator&(T rhs) const
+        {
+            return (*this) & Enum(rhs);
+        }
+
+        /**
+         * Performs bitwise AND with ``rhs``.
+         *
+         * @param rhs Enum to and.
+         * @return Reference to current instance.
+         */
+        constexpr Enum& operator&=(Enum rhs)
+        {
+            *this = (*this) & rhs;
+            return *this;
+        }
+
+        /**
+         * Performs bitwise NOT.
+         * 
+         * @return Operation result. 
+         */
+        constexpr Enum operator~() const
+        {
+            if constexpr (std::is_scoped_enum_v<T>) return static_cast<T>(~Enum::AsInt(this->value));
+            else return static_cast<T>(~this->value);
+        }
+
+        /**
          * Compares two enums.
          *
          * @param rhs Enum to compare.
          * @return ``true`` if value of both enums are same, otherwise ``false``.
          */
+        constexpr bool operator==(Enum rhs) const
+        {
+            return this->value == rhs.value;
+        }
+
+        /** @copydoc operator==(Enum) */
         constexpr bool operator==(T rhs) const
         {
             return this->value == rhs;
@@ -71,28 +148,19 @@ namespace Heph
          * @param v Values to check.
          * @return ``true`` if all bits of the ``v`` are set, otherwise ``false``.
          */
-        constexpr bool Test(T v) const
+        constexpr bool Test(Enum v) const
         {
-            if constexpr (std::is_scoped_enum_v<T>) return (Enum::AsInt(this->value) & Enum::AsInt(v)) == Enum::AsInt(v);
-            else return (this->value & v) == v;
+            return ((*this) & v) == v;
         }
 
         /**
          * Or with ``v``.
          *
-         * @param v Bits to set.
+         * @param v Values to set.
          */
-        constexpr void Set(T v)
+        constexpr void Set(Enum v)
         {
-            if constexpr (std::is_scoped_enum_v<T>)
-            {
-                auto result = Enum::AsInt(this->value) | Enum::AsInt(v);
-                this->value = *reinterpret_cast<T*>(&result);
-            }
-            else
-            {
-                this->value = static_cast<T>(this->value | v);
-            }
+            *this |= v;
         }
 
     private:

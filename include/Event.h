@@ -50,7 +50,11 @@ namespace Heph
 		 */
 		bool HandlerExists(EventHandler handler) const;
 
-		/** Gets the event handler at the provided index. */
+		/** 
+		 * Gets the event handler at the provided index. 
+		 * 
+		 * @exception InvalidArgumentException
+		 */
 		EventHandler GetHandler(size_t index) const;
 
 		/** Removes all the event handlers than adds the provided one. */

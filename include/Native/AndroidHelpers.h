@@ -22,13 +22,33 @@ namespace Heph::Native
     public:
         HEPH_DISABLE_INSTANCE(AndroidHelpers);
 
-        /** Checks if the AndroidHelpers::jvm is set and throws an exception if not. */
+        /** 
+         * Checks if the AndroidHelpers::jvm is set and throws an exception if not. 
+         *
+         * @exception InvalidOperationException
+         */
         static void ValidateJVM();
-        /** Gets the JNIEnv variable. */
+
+        /** 
+         * Gets the JNIEnv variable. 
+         * 
+         * @exception InvalidOperationException
+         * @exception ExternalException
+         */
         static JNIEnv* GetEnv();
-        /** Converts jstring to std::string. */
+        
+        /** 
+         * Converts jstring to std::string. 
+         * 
+         * @exception InvalidArgumentException
+         */
         static std::string JStringToStdString(JNIEnv* env, jstring jstr);
-        /** Converts std::string to jstring. */
+        
+        /** 
+         * Converts std::string to jstring. 
+         * 
+         * @exception InvalidArgumentException
+         */
         static jstring StdStringToJString(JNIEnv* env, const std::string& stdstr);
     };
 }

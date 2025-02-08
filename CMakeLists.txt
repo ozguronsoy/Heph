@@ -39,6 +39,7 @@ endif()
 
 include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_CURRENT_LIST_DIR}/include/Buffers
     ${CMAKE_CURRENT_LIST_DIR}/include/Exceptions
     ${CMAKE_CURRENT_LIST_DIR}/include/Native
 )
