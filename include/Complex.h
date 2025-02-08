@@ -21,16 +21,16 @@ namespace Heph
         requires (!std::is_void_v<TNumber>)
     struct HEPH_API Complex
     {
-        /** @brief real part of the complex number. */
+        /** Real part of the complex number. */
         TNumber real;
-        /** @brief imaginary part of the complex number. */
+        /** Imaginary part of the complex number. */
         TNumber imag;
 
         /**
          * @copydoc constructor
          *
-         * @param real @copydoc real
-         * @param imag @copydoc imag
+         * @param real @copydetails real
+         * @param imag @copydetails imag
          */
         constexpr Complex(TNumber real = 0.0, TNumber imag = 0.0)
             : real(real), imag(imag)
@@ -49,6 +49,12 @@ namespace Heph
         {
         }
 
+        /**
+         * Assigns the real number to current instance.
+         * 
+         * @param rhs Real number to assign.
+         * @return Reference to current instance.
+         */
         constexpr Complex& operator=(TNumber rhs)
         {
             this->real = rhs;
@@ -56,6 +62,12 @@ namespace Heph
             return *this;
         }
 
+        /**
+         * Assigns the complex number to current instance.
+         * 
+         * @param rhs Complex number to assign.
+         * @return Reference to current instance.
+         */
         constexpr Complex& operator=(const Complex& rhs)
         {
             this->real = rhs.real;
@@ -63,6 +75,7 @@ namespace Heph
             return *this;
         }
 
+        /** @copydoc operator=(const Complex&) */
         constexpr Complex& operator=(const std::complex<TNumber>& rhs)
         {
             this->real = rhs.real();
@@ -417,7 +430,7 @@ namespace Heph
          *
          * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
          * @param rhs Number to compare.
-         * @return true if both numbers have the same value, otherwise false.
+         * @return ``true`` if both numbers have the same value, otherwise ``false``.
          */
         template<Primitive TRhsNumber>
         constexpr bool operator==(const Complex<TRhsNumber>& rhs) const
@@ -438,7 +451,7 @@ namespace Heph
          *
          * @tparam TRhsNumber Type of the real and imaginary numbers of rhs.
          * @param rhs Number to compare.
-         * @return false if both numbers have the same value, otherwise true.
+         * @return ``false`` if both numbers have the same value, otherwise ``true``.
          */
         template<Primitive TRhsNumber>
         constexpr bool operator!=(const Complex<TRhsNumber>& rhs) const

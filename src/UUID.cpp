@@ -110,6 +110,12 @@ namespace Heph
         return (*this) = std::string(uuidStr.begin(), uuidStr.end());
     }
 
+    UUID& UUID::operator=(const UUID& rhs)
+    {
+        this->data = rhs.data;
+        return *this;
+    }
+
     UUID::operator Native() const
     {
         Native nativeUUID;

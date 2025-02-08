@@ -65,9 +65,37 @@ namespace Heph
         /** @copydoc UUID(const std::string&) */
         explicit UUID(const std::wstring& uuidStr);
 
+        /**
+         * Assigns the native UUID to current instance.
+         * 
+         * @param nativeUUID Native UUID to assign.
+         * @return Reference to current instance.
+         */
         UUID& operator=(const Native& nativeUUID);
+
+        /**
+         * Assigns the UUID from string to current instance.
+         * 
+         * @param uuidStr UUID string to assign.
+         * @return Reference to current instance.
+         */
         UUID& operator=(const std::string& uuidStr);
+
+        /**
+         * Assigns the UUID from wide string to current instance.
+         * 
+         * @param uuidStr Wide UUID string to assign.
+         * @return Reference to current instance.
+         */
         UUID& operator=(const std::wstring& uuidStr);
+
+        /**
+         * Assigns the UUID to current instance.
+         * 
+         * @param rhs UUID to assign.
+         * @return Reference to current instance.
+         */
+        UUID& operator=(const UUID& rhs);
 
         /** Converts Heph::UUID to native. */
         operator Native() const;
@@ -80,14 +108,22 @@ namespace Heph
          * Compares two UUIDs.
          *
          * @param rhs UUID to compare.
-         * @return true if both UUIDs have the same value, otherwise false.
+         * @return ``true`` if both UUIDs have the same value, otherwise ``false``.
          */
         bool operator==(const UUID& rhs) const = default;
 
-        /** Generates new UUID via native methods. */
+        /** 
+         * Generates new UUID via native methods.
+         * 
+         * @exception ExternalException 
+         */
         void Generate();
 
-        /** Creates a new UUID instance and calls UUID::Generate. */
+        /** 
+         * Creates a new UUID instance and calls UUID::Generate.
+         * 
+         * @exception ExternalException 
+         */
         static UUID Create();
 
         /**
