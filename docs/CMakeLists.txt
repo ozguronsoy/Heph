@@ -17,6 +17,12 @@ if(DOXYGEN_FOUND)
         @ONLY
     )
 
+    configure_file(
+        "${CMAKE_CURRENT_LIST_DIR}/DoxygenLayout.xml"
+        "${CMAKE_BINARY_DIR}/docs/DoxygenLayout.xml"
+        @ONLY
+    )
+
     execute_process(
         COMMAND ${DOXYGEN_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/docs
