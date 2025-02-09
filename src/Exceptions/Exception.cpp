@@ -37,7 +37,7 @@ namespace Heph
     void Exception::Raise() const
     {
         ExceptionEventArgs args(*this);
-        Exception::OnException.Invoke(&args, nullptr);
+        Exception::ExceptionEvent.Invoke(&args, nullptr);
         this->AddToExceptions();
     }
 

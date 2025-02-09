@@ -34,7 +34,7 @@ namespace Heph
         using ExceptionList = std::list<std::unique_ptr<Exception>>;
 
         /** Raised when an exception occurs. */
-        static inline Event OnException = Event();
+        static inline Event ExceptionEvent = Event();
 
     private:
         /** Name of the method where the exception occurred. */

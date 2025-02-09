@@ -15,8 +15,8 @@ protected:
 	ExceptionTest()
 	{
         Exception::ClearExceptions();
-        Exception::OnException.userArgs.clear();
-		Exception::OnException.ClearHandlers();
+        Exception::ExceptionEvent.userArgs.clear();
+		Exception::ExceptionEvent.ClearHandlers();
 	}
 
 	static void Handler1(const EventParams& params)
@@ -45,7 +45,7 @@ protected:
 
 TEST_F(ExceptionTest, Handler)
 {
-	Exception::OnException = &Handler1;
+	Exception::ExceptionEvent = &Handler1;
 	HEPH_EXCEPTION_RAISE(Exception, ExceptionTest::METHOD, ExceptionTest::MESSAGE);
 }
 
@@ -83,7 +83,7 @@ TEST_F(ExceptionTest, LastException)
 	HEPH_EXCEPTION_RAISE(Exception, "", "");
 	EXPECT_TRUE(Exception::LastException() != nullptr);
 
-	Exception::OnException = &Handler2;
+	Exception::ExceptionEvent = &Handler2;
 	HEPH_EXCEPTION_RAISE(InvalidArgumentException, "", "");
 	CHECK_EX_TYPE(Exception::LastException(), InvalidArgumentException);
 }
