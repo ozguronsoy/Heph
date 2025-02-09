@@ -40,13 +40,14 @@ namespace Heph
      */
     template<Primitive T>
         requires (sizeof(T) > 1)
-    constexpr inline T SwapEndian(T data)
+    constexpr inline T SwapEndian(T data) noexcept
     {
         if constexpr (sizeof(T) == 2) return HEPH_SWAP_ENDIAN_16(data);
         else if constexpr (sizeof(T) == 3) return HEPH_SWAP_ENDIAN_24(data);
         else if constexpr (sizeof(T) == 4) return HEPH_SWAP_ENDIAN_32(data);
         else if constexpr (sizeof(T) == 8) return HEPH_SWAP_ENDIAN_64(data);
-        else
+        else if constexpr (std::is_integral_v<T>) return std::byteswap(data);
+        else // 128-bit float?
         {
             const size_t halfSize = sizeof(T) / 2;
             uint8_t* pData = &data;
@@ -70,7 +71,7 @@ namespace Heph
      */
     template<Primitive T>
         requires (sizeof(T) > 1)
-    constexpr inline T SwapEndian(T data, std::endian& endian)
+    constexpr inline T SwapEndian(T data, std::endian& endian) noexcept
     {
         endian = (endian == std::endian::little) ? (std::endian::big) : (std::endian::little);
         return Heph::SwapEndian<T>(data);
@@ -86,7 +87,7 @@ namespace Heph
      */
     template<Primitive T>
         requires (sizeof(T) > 1)
-    constexpr inline T NativeToLittleEndian(T data)
+    constexpr inline T NativeToLittleEndian(T data) noexcept
     {
         if constexpr (std::endian::native == std::endian::little)
             return data;
@@ -104,7 +105,7 @@ namespace Heph
      */
     template<Primitive T>
         requires (sizeof(T) > 1)
-    constexpr inline T NativeToBigEndian(T data)
+    constexpr inline T NativeToBigEndian(T data) noexcept
     {
         if constexpr (std::endian::native == std::endian::big)
             return data;
@@ -122,7 +123,7 @@ namespace Heph
      */
     template<Primitive T>
         requires (sizeof(T) > 1)
-    constexpr inline T LittleEndianToNative(T data)
+    constexpr inline T LittleEndianToNative(T data) noexcept
     {
         return Heph::NativeToLittleEndian(data);
     }
@@ -137,7 +138,7 @@ namespace Heph
      */
     template<Primitive T>
         requires (sizeof(T) > 1)
-    constexpr inline T BigEndianToNative(T data)
+    constexpr inline T BigEndianToNative(T data) noexcept
     {
         return Heph::NativeToBigEndian(data);
     }

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "Event.h"
-#include "Complex.h"
 #include <string>
+#include <complex>
 
 using namespace Heph;
 
@@ -18,7 +18,7 @@ protected:
 
 	std::string param1;
 	int param2;
-	Complex<double> param3;
+	std::complex<double> param3;
 
 	bool handler1;
 	bool handler2;
@@ -38,7 +38,7 @@ protected:
 
 		param1 = "Hello World!";
 		param2 = 37;
-		param3 = Complex<double>(10, 20);
+		param3 = std::complex<double>(10, 20);
 
 		pArgs = nullptr;
 		pResult = nullptr;
