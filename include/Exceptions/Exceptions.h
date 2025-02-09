@@ -4,9 +4,8 @@
 #include "Exceptions/InsufficientMemoryException.h"
 #include "Exceptions/InvalidArgumentException.h"
 #include "Exceptions/InvalidOperationException.h"
+#include "Exceptions/InvalidStateException.h"
 #include "Exceptions/NotFoundException.h"
 #include "Exceptions/NotImplementedException.h"
 #include "Exceptions/NotSupportedException.h"
 #include "Exceptions/TimeoutException.h"
-
-/** @file */

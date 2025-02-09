@@ -56,6 +56,7 @@ TEST_F(ExceptionTest, Name)
 	EXPECT_EQ(InsufficientMemoryException("", "").Name(), "InsufficientMemoryException");
 	EXPECT_EQ(InvalidArgumentException("", "").Name(), "InvalidArgumentException");
 	EXPECT_EQ(InvalidOperationException("", "").Name(), "InvalidOperationException");
+	EXPECT_EQ(InvalidStateException("", "").Name(), "InvalidStateException");
 	EXPECT_EQ(NotFoundException("", "").Name(), "NotFoundException");
 	EXPECT_EQ(NotImplementedException("", "").Name(), "NotImplementedException");
 	EXPECT_EQ(NotSupportedException("", "").Name(), "NotSupportedException");
