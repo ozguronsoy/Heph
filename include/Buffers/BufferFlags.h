@@ -15,7 +15,9 @@ namespace
         /** @brief Specifies that the elements will NOT be initialized after allocating memory. */
         AllocUninitialized = 1,
         /** @brief Specifies that the buffer is circular.  */
-        Circular = 2
+        Circular = 2,
+        /** @brief Specifies that only strides will be adjusted when transposing. */
+        TransposeOnlyStrides = 4
     };
 }
 

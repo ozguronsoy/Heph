@@ -9,12 +9,12 @@
 namespace Heph
 {
     /**
-     * @brief Wrapper for C enums and scoped enums.
+     * @brief Wrapper for C enums, scoped enums, and integral types used as flags.
      *
      * @tparam T Type of the enum.
      */
     template<typename T>
-        requires (std::is_enum_v<T> || std::is_scoped_enum_v<T>)
+        requires (std::is_enum_v<T> || std::is_scoped_enum_v<T> || std::is_integral_v<T>)
     struct HEPH_API Enum final
     {
         /** Value of the enum. */
@@ -116,8 +116,8 @@ namespace Heph
 
         /**
          * Performs bitwise NOT.
-         * 
-         * @return Operation result. 
+         *
+         * @return Operation result.
          */
         constexpr Enum operator~() const
         {
@@ -172,10 +172,14 @@ namespace Heph
          */
         static constexpr auto AsInt(T v)
         {
-            if constexpr (sizeof(T) == sizeof(uint64_t)) return *reinterpret_cast<uint64_t*>(&v);
-            else if constexpr (sizeof(T) == sizeof(uint32_t)) return *reinterpret_cast<uint32_t*>(&v);
-            else if constexpr (sizeof(T) == sizeof(uint16_t)) return *reinterpret_cast<uint16_t*>(&v);
-            else return *reinterpret_cast<uint8_t*>(&v);
+            if constexpr (std::is_integral_v<T>) return v;
+            else
+            {
+                if constexpr (sizeof(T) == sizeof(uint64_t)) return *reinterpret_cast<uint64_t*>(&v);
+                else if constexpr (sizeof(T) == sizeof(uint32_t)) return *reinterpret_cast<uint32_t*>(&v);
+                else if constexpr (sizeof(T) == sizeof(uint16_t)) return *reinterpret_cast<uint16_t*>(&v);
+                else return *reinterpret_cast<uint8_t*>(&v);
+            }
         }
     };
 }
