@@ -27,7 +27,11 @@ namespace Heph
 		 */
 		ExternalException(const std::string& method, const std::string& message, const std::string& externalSource, const std::string& externalMessage);
 
-        virtual std::string FormattedMessage() const noexcept override;
+		/** @copydoc destructor */
+		virtual ~ExternalException() = default;
+
+		virtual ICloneable* Clone() const noexcept override;
+		virtual std::string FormattedMessage() const noexcept override;
 		virtual std::string Name() const noexcept override;
 
 		/** Gets the external source. */
@@ -35,9 +39,6 @@ namespace Heph
 
 		/** Gets the external message. */
 		const std::string& ExternalMessage() const;
-
-	protected:
-		virtual void AddToExceptions() const override;
 	};
 }
 

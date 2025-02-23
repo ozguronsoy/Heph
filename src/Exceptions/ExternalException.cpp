@@ -9,6 +9,11 @@ namespace Heph
 	{
 	}
 
+	ICloneable* ExternalException::Clone() const noexcept
+    {
+        return new ExternalException(*this);
+    }
+
 	std::string ExternalException::FormattedMessage() const noexcept
     {
 		const std::string baseMessage = Exception::FormattedMessage();
@@ -28,10 +33,5 @@ namespace Heph
 	const std::string& ExternalException::ExternalMessage() const
 	{
 		return this->externalMessage;
-	}
-
-	void ExternalException::AddToExceptions() const
-	{
-		Exception::ExceptionListInstance().push_back(std::make_unique<ExternalException>(*this));
 	}
 }

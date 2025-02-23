@@ -12,7 +12,6 @@ Heph is a modern cross-platform C++ library that provides common components that
 
 - ``Exceptions`` for detailed error handling.
 - ``Events`` for managing callback methods with custom parameters.
-- Multidimensional ``Buffer`` classes for storing/processing big chunks of sequential data.
 - Wrapper class for generating/managing native UUIDs.
 
 

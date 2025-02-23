@@ -14,6 +14,11 @@ namespace Heph
         return this->message.c_str();
     }
 
+    ICloneable* Exception::Clone() const noexcept
+    {
+        return new Exception(*this);
+    }
+
     std::string Exception::FormattedMessage() const noexcept
     {
         return this->Name() + "\nmethod: " + this->method + "\nmessage: " + this->message;
@@ -38,12 +43,7 @@ namespace Heph
     {
         ExceptionEventArgs args(*this);
         Exception::ExceptionEvent.Invoke(&args, nullptr);
-        this->AddToExceptions();
-    }
-
-    void Exception::AddToExceptions() const
-    {
-        Exception::ExceptionListInstance().push_back(std::make_unique<Exception>(*this));
+        (void)Exception::ExceptionListInstance().emplace_back(dynamic_cast<Exception*>(this->Clone()));
     }
 
     const Exception::ExceptionList& Exception::Exceptions() noexcept

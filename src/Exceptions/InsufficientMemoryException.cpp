@@ -4,13 +4,13 @@ namespace Heph
 {
 	InsufficientMemoryException::InsufficientMemoryException(const std::string& method, const std::string& message) : Exception(method, message) {}
 
+	ICloneable* InsufficientMemoryException::Clone() const noexcept
+    {
+        return new InsufficientMemoryException(*this);
+    }
+
 	std::string InsufficientMemoryException::Name() const noexcept
 	{
 		return "InsufficientMemoryException";
-	}
-
-	void InsufficientMemoryException::AddToExceptions() const
-	{
-		Exception::ExceptionListInstance().push_back(std::make_unique<InsufficientMemoryException>(*this));
 	}
 }

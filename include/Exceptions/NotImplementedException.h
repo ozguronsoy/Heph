@@ -14,11 +14,11 @@ namespace Heph
 	public:
 		/** @copydoc Exception(const std::string&,const std::string&) */
 		NotImplementedException(const std::string& method, const std::string& message);
+		/** @copydoc destructor */
+		virtual ~NotImplementedException() = default;
 
+        virtual ICloneable* Clone() const noexcept override;
 		virtual std::string Name() const noexcept override;
-
-	protected:
-		virtual void AddToExceptions() const override;
 	};
 }
 

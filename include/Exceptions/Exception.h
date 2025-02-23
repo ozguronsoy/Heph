@@ -2,6 +2,7 @@
 #define HEPH_EXCEPTION_H
 
 #include "HephShared.h"
+#include "ICloneable.h"
 #include "Event.h"
 #include "ExceptionEventArgs.h"
 #include <exception>
@@ -28,7 +29,7 @@
 namespace Heph
 {
     /** @brief Stores exception information. Base class for exceptions. */
-    class HEPH_API Exception : public std::exception
+    class HEPH_API Exception : public std::exception, public ICloneable
     {
     public:
         using ExceptionList = std::list<std::unique_ptr<Exception>>;
@@ -56,6 +57,8 @@ namespace Heph
 
         virtual const char* what() const noexcept override;
 
+        virtual ICloneable* Clone() const noexcept override;
+
         /** Gets the formatted full message. */
         virtual std::string FormattedMessage() const noexcept;
 
@@ -70,10 +73,6 @@ namespace Heph
 
         /** Raises the OnException event. */
         void Raise() const;
-
-    protected:
-        /** Adds the exception to the list. */
-        virtual void AddToExceptions() const;
 
     public:
         /**
