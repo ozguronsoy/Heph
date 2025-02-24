@@ -31,7 +31,7 @@ jobs:
         rm android-ndk.zip
 
     - name: Configure CMake
-      working-directory: ${{github.workspace}}/build
+      working-directory: ${{github.workspace}}
       run: > 
         cmake
         -DCMAKE_TOOLCHAIN_FILE=$HOME/Android/Sdk/ndk/android-ndk-r27b/build/cmake/android.toolchain.cmake 
@@ -43,9 +43,9 @@ jobs:
         -B build/
 
     - name: Build
-      working-directory: ${{github.workspace}}/build
+      working-directory: ${{github.workspace}}
       run: cmake --build build
 
     - name: Run Tests
-      working-directory: ${{github.workspace}}/build
+      working-directory: ${{github.workspace}}
       run: ./build/tests/HephTests
