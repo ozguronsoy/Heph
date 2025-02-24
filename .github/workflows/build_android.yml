@@ -24,16 +24,17 @@ jobs:
         java-version: '21'
         distribution: 'adopt'
 
-    - name: Install Android NDK
-      uses: actions/setup-ndk@v1
-      with:
-        ndk-version: r28
-
     - name: Install Android SDK
-      uses: actions/setup-android-sdk@v1
+      uses: Swisyn/setup-android-sdk@v1
       with:
         sdk-version: '30'
         api-level: 30
+
+    - name: Install Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r28
+        link-to-sdk: true
 
     - name: Install Android Emulator
       run: |
