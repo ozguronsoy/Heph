@@ -24,36 +24,35 @@ jobs:
         java-version: '21'
         distribution: 'adopt'
 
-    - name: Install Android SDK
-      uses: Swisyn/setup-android-sdk@v1
-      with:
-        sdk-version: '34'
-        api-level: 34
-
     - name: Install Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r28
-        link-to-sdk: true
-
-    - name: Install Dependencies
       run: |
-        sudo apt update
-        sudo apt install libjaxb-api-java -y
+        mkdir -p $HOME/Android/Sdk/ndk
+        cd $HOME/Android/Sdk/ndk
+        curl -L https://dl.google.com/android/repository/android-ndk-r28-linux.zip -o android-ndk.zip
+        unzip android-ndk.zip
+        rm android-ndk.zip
+
+    - name: Install Android SDK
+      run: |
+        mkdir -p $HOME/Android/Sdk
+        cd $HOME/Android/Sdk
+        curl -L https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip -o commandlinetools.zip
+        unzip commandlinetools.zip
+        rm commandlinetools.zip
+        yes | $HOME/Android/Sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/Android/Sdk --licenses
+        yes | $HOME/Android/Sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/Android/Sdk "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64"
 
     - name: Install Android Emulator
-      run: |
-        echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --licenses
-        $ANDROID_HOME/tools/bin/sdkmanager "system-images;android-30;google_apis;x86_64"
-        $ANDROID_HOME/tools/emulator -list-avds || $ANDROID_HOME/tools/bin/avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --force
-        nohup $ANDROID_HOME/tools/emulator -avd test -no-window -no-audio -gpu off -verbose &
-        adb wait-for-device
+      run: yes | $HOME/Android/Sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/Android/Sdk "emulator"
+
+    - name: Install Android ADB
+      run: sudo apt install android-tools-adb -y
 
     - name: Configure CMake
       working-directory: ${{github.workspace}}
       run: > 
         cmake
-        -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake 
+        -DCMAKE_TOOLCHAIN_FILE=$HOME/Android/Sdk/ndk/android-ndk-r28/build/cmake/android.toolchain.cmake 
         -DANDROID_ABI=arm64-v8a
         -DANDROID_PLATFORM=android-30
         -DCMAKE_CXX_FLAGS='-w -O2 -landroid -llog'
@@ -67,7 +66,12 @@ jobs:
 
     - name: Run Tests
       working-directory: ${{github.workspace}}
-      run: >
+      run: |
+        echo "no" | $HOME/Android/Sdk/tools/bin/avdmanager create avd -n Pixel_3_API_30 -k "system-images;android-30;google_apis;x86_64" -d pixel_3
+        nohup $HOME/Android/Sdk/emulator/emulator -avd Pixel_3_API_30 -no-window -no-audio -gpu off -verbose &
+        adb wait-for-device
+        adb shell input keyevent 82
+
         adb push build/tests/HephTests /data/local/tmp/
         adb shell chmod 755 /data/local/tmp/HephTests
         adb shell /data/local/tmp/HephTests
