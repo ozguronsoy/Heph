@@ -21,8 +21,7 @@ jobs:
     - name: Setup JDK
       uses: actions/setup-java@v2
       with:
-        java-version: '21'
-        distribution: 'adopt'
+        java-version: '8'
 
     - name: Install Android SDK
       uses: Swisyn/setup-android-sdk@v1
