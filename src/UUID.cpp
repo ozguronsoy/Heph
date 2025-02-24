@@ -39,9 +39,9 @@ namespace Heph
 #ifdef _WIN32
 
         Native temp;
-        temp.Data1 = Heph::SwapEndian(nativeUUID.Data1);
-        temp.Data2 = Heph::SwapEndian(nativeUUID.Data2);
-        temp.Data3 = Heph::SwapEndian(nativeUUID.Data3);
+        temp.Data1 = std::byteswap(nativeUUID.Data1);
+        temp.Data2 = std::byteswap(nativeUUID.Data2);
+        temp.Data3 = std::byteswap(nativeUUID.Data3);
 
         (void)std::copy((uint8_t*)&temp.Data1, (uint8_t*)(&temp.Data1 + 1), this->data.data());
         (void)std::copy((uint8_t*)&temp.Data2, (uint8_t*)(&temp.Data2 + 1), this->data.data() + 4);
@@ -123,9 +123,9 @@ namespace Heph
 
 #ifdef _WIN32
 
-        nativeUUID.Data1 = Heph::SwapEndian(*reinterpret_cast<const unsigned long*>(this->data.data()));
-        nativeUUID.Data2 = Heph::SwapEndian(*reinterpret_cast<const unsigned short*>(this->data.data() + 4));
-        nativeUUID.Data3 = Heph::SwapEndian(*reinterpret_cast<const unsigned short*>(this->data.data() + 6));
+        nativeUUID.Data1 = std::byteswap(*reinterpret_cast<const unsigned long*>(this->data.data()));
+        nativeUUID.Data2 = std::byteswap(*reinterpret_cast<const unsigned short*>(this->data.data() + 4));
+        nativeUUID.Data3 = std::byteswap(*reinterpret_cast<const unsigned short*>(this->data.data() + 6));
         (void)std::copy(this->data.data() + 8, this->data.data() + this->data.size(), nativeUUID.Data4);
 
 #elif defined(__ANDROID__)

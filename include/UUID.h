@@ -2,7 +2,6 @@
 #define HEPH_UUID_H
 
 #include "HephShared.h"
-#include "HephEndian.h"
 #include <cstdint>
 #include <array>
 #include <string>
