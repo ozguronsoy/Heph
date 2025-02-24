@@ -1,0 +1,44 @@
+name: Linux
+
+on:
+  push:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+
+concurrency:
+  group: "build_linux"
+  cancel-in-progress: true
+
+jobs:
+  gcc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update GCC
+        run: >
+          sudo apt upgrade
+          sudo apt install gcc-14 g++-14
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 14
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 14
+          gcc --version
+          g++ --version
+
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}
+        run: > 
+          cmake
+          -S .
+          -B build/
+          -DHEPH_BUILD_TESTS=ON
+          -DCMAKE_CXX_FLAGS='-w -O2'
+          .
+
+      - name: Build
+        working-directory: ${{github.workspace}}
+        run: cmake --build build
+
+      - name: Run Tests
+        working-directory: ${{github.workspace}}
+        run: ./build/tests/HephTests
