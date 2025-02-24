@@ -37,8 +37,7 @@ jobs:
         link-to-sdk: true
 
     - name: Install Dependencies
-      run: >
-        sudo add-apt-repository universe
+      run: |
         sudo apt update
         sudo apt install libjaxb-api-java -y
         sudo apt install libjaxb-impl-java -y
