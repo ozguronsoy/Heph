@@ -166,7 +166,7 @@ struct HEPH_API std::formatter<Heph::UUID, char>
         return ctx.begin();
     }
 
-    constexpr std::format_context::iterator format(const Heph::UUID& uuid, std::format_context& ctx) const
+    std::format_context::iterator format(const Heph::UUID& uuid, std::format_context& ctx) const
     {
         return std::format_to(ctx.out(),
             "{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <ctype.h>
+#include <algorithm>
 
 #ifdef _WIN32
 #include "WinHelpers.h"

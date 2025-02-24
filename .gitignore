@@ -1,5 +1,6 @@
 .vscode/
 build/
 build_tests.ps1
+build_tests_msvc.ps1
 build_tests.sh
 build_docs.ps1
