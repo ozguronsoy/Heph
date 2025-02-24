@@ -2,9 +2,9 @@ name: Android
 
 on:
   push:
-    branches: [ "main", "CI" ]
+    branches: ["main", "CI"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
   workflow_dispatch:
     
@@ -17,6 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
       
     - name: Setup JDK
       uses: actions/setup-java@v2
@@ -46,7 +53,16 @@ jobs:
       run: yes | $HOME/Android/Sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/Android/Sdk "emulator"
 
     - name: Install Android ADB
-      run: sudo apt install android-tools-adb -y
+      run: |
+        sudo apt update
+        sudo apt install android-tools-adb -y
+
+    - name: Start Android Emulator
+      run: |
+        echo "no" | $HOME/Android/Sdk/cmdline-tools/bin/avdmanager create avd -n Pixel_3_API_30 -k "system-images;android-30;google_apis;x86_64" -d pixel_3
+        nohup $HOME/Android/Sdk/emulator/emulator -avd Pixel_3_API_30 -no-window -no-audio -gpu off -verbose &
+        adb wait-for-device
+        adb shell input keyevent 82
 
     - name: Configure CMake
       working-directory: ${{github.workspace}}
@@ -67,11 +83,6 @@ jobs:
     - name: Run Tests
       working-directory: ${{github.workspace}}
       run: |
-        echo "no" | $HOME/Android/Sdk/cmdline-tools/bin/avdmanager create avd -n Pixel_3_API_30 -k "system-images;android-30;google_apis;x86_64" -d pixel_3
-        nohup $HOME/Android/Sdk/emulator/emulator -avd Pixel_3_API_30 -no-window -no-audio -gpu off -verbose &
-        adb wait-for-device
-        adb shell input keyevent 82
-
         adb push build/tests/HephTests /data/local/tmp/
         adb shell chmod 755 /data/local/tmp/HephTests
         adb shell /data/local/tmp/HephTests
