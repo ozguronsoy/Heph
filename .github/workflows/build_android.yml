@@ -21,20 +21,25 @@ jobs:
     - name: Setup JDK
       uses: actions/setup-java@v2
       with:
-        java-version: '8'
+        java-version: '21'
         distribution: 'adopt'
 
     - name: Install Android SDK
       uses: Swisyn/setup-android-sdk@v1
       with:
-        sdk-version: '30'
-        api-level: 30
+        sdk-version: '34'
+        api-level: 34
 
     - name: Install Android NDK
       uses: nttld/setup-ndk@v1
       with:
         ndk-version: r28
         link-to-sdk: true
+
+    - name: Install Dependencies
+      run: >
+        sudo apt install libjaxb-api-java -y
+        sudo apt install libjaxb-impl-java -y
 
     - name: Install Android Emulator
       run: |
