@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gcc:
+  msvc:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,6 @@ jobs:
           -B build/
           -DCMAKE_C_COMPILER=cl
           -DCMAKE_CXX_COMPILER=cl
-          -DCMAKE_BUILD_TYPE=Release
           -DHEPH_BUILD_TESTS=ON
           -DCMAKE_CXX_FLAGS='/W0 /WX- /O2 /EHsc'
           .
@@ -37,4 +36,4 @@ jobs:
 
       - name: Run Tests
         working-directory: ${{github.workspace}}
-        run: ./build/tests/Release/HephTests.exe
+        run: ./build/tests/Debug/HephTests.exe
