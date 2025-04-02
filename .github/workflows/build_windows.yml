@@ -1,0 +1,39 @@
+name: Linux
+
+on:
+  push:
+    branches: ["main", "CI"]
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+concurrency:
+  group: "build_windows"
+  cancel-in-progress: true
+
+jobs:
+  gcc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}
+        run: > 
+          cmake
+          -S .
+          -B build/
+          -DCMAKE_C_COMPILER=cl
+          -DCMAKE_CXX_COMPILER=cl
+          -DHEPH_BUILD_TESTS=ON
+          -DCMAKE_CXX_FLAGS='/W0 /WX- /O2 /EHsc'
+          .
+
+      - name: Build
+        working-directory: ${{github.workspace}}
+        run: cmake --build build
+
+      - name: Run Tests
+        working-directory: ${{github.workspace}}
+        run: ./build/tests/HephTests.exe
