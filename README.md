@@ -31,10 +31,12 @@ Linux:
 
 ### Build
 
-Build options:
+CMake options:
 
-- ``-DHEPH_BUILD_STATIC=On`` to build static library.
-- ``-DHEPH_BUILD_SHARED=On`` to build shared library.
-- ``-DHEPH_BUILD_DOCS=On`` to build documentation.
-- ``-DHEPH_BUILD_TESTS=On`` to build tests.
-- ``-DCMAKE_CXX_FLAGS="-DHEPH_CL_DISABLE_COLORED_OUTPUT"`` to disable colored output for consoles that does not support ANSI escape codes.
+- ``-DHEPH_BUILD_STATIC=On`` builds static library.
+- ``-DHEPH_BUILD_SHARED=On`` builds shared library.
+- ``-DHEPH_BUILD_DOCS=On`` builds documentation.
+- ``-DHEPH_BUILD_TESTS=On`` builds tests.
+
+Build Options:
+- ``-DHEPH_CL_DISABLE_COLORED_OUTPUT`` disables colored console output.
