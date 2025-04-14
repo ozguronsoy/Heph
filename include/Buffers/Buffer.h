@@ -21,7 +21,7 @@ namespace Heph
     * @brief Container for storing large sequential data.
     *
     * @tparam TSelf Type of the derived buffer (CRTP).
-    * @tparam TData Type of the stored data. Must be default constructible and trivally destructible.
+    * @tparam TData Type of the elements stored in buffer. Must be default constructible and trivally destructible.
     * @tparam NDimensions Number of dimensions.
     */
     template <typename TSelf, BufferElement TData, size_t NDimensions = 1>
@@ -35,6 +35,7 @@ namespace Heph
         using const_iterator = BufferIterator<const TData, NDimensions>;
         /** @copybrief iterator::buffer_size_t */
         using buffer_size_t = iterator::buffer_size_t;
+
         /** @copybrief iterator::BUFFER_SIZE_ZERO */
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
 
@@ -59,11 +60,13 @@ namespace Heph
          * @param size @copydetails bufferSize
          * @exception InsufficientMemoryException
          */
-        constexpr explicit Buffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size)
-            requires (sizeof...(size) <= NDimensions && (std::is_convertible_v<decltype(size), size_t> && ...))
-        : pData(nullptr), bufferSize(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO), flags(flags)
+        explicit Buffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size)
+            : pData(nullptr), bufferSize(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO), flags(flags)
         {
+            static_assert(sizeof...(size) <= NDimensions, "Invalid number of size parameters parameters.");
+            static_assert((std::is_convertible_v<decltype(size), size_t> && ...), "Invalid type for size parameters, must be convertible to size_t.");
             static_assert(std::derived_from<TSelf, Buffer<TSelf, TData, NDimensions>>, "TSelf must derive from Buffer<TSelf, TData, NDimensions>.");
+            static_assert(std::is_copy_constructible_v<TSelf> && std::is_copy_assignable_v<TSelf>, "TSelf must be copy constructible and copy assignable.");
 
             if constexpr (sizeof...(size) > 0)
             {
@@ -176,9 +179,11 @@ namespace Heph
          * @param indices Indices of the element.
          * @return Reference to the element.
          */
-        constexpr TData& operator[](auto... indices)
-            requires (sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions && (std::is_convertible_v<decltype(indices), size_t> && ...))
+        TData& operator[](auto... indices)
         {
+            static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
+            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+
             return iterator::template Get<false>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
         }
 
@@ -188,9 +193,11 @@ namespace Heph
          * @param indices Indices of the element.
          * @return Reference to the element.
          */
-        constexpr const TData& operator[](auto... indices) const
-            requires (sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions && (std::is_convertible_v<decltype(indices), size_t> && ...))
+        const TData& operator[](auto... indices) const
         {
+            static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
+            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+
             return const_iterator::template Get<false>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
         }
 
@@ -239,7 +246,7 @@ namespace Heph
          * @param dim 0-based dimension.
          * @exception InvalidArgumentException
          */
-        constexpr size_t Size(size_t dim) const
+        size_t Size(size_t dim) const
         {
             if (dim >= NDimensions)
             {
@@ -262,15 +269,19 @@ namespace Heph
          * @exception InvalidArgumentException
          */
         TData& At(auto... indices)
-            requires (sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions && (std::is_convertible_v<decltype(indices), size_t> && ...))
         {
+            static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
+            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+
             return iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
         }
 
         /** @copydoc At */
         const TData& At(auto... indices) const
-            requires (sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions && (std::is_convertible_v<decltype(indices), size_t> && ...))
         {
+            static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
+            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+
             return const_iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
         }
 
@@ -284,6 +295,9 @@ namespace Heph
          */
         void Transpose(auto... perm)
         {
+            static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
+            static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
+
             const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
             this->Transpose(permArray);
         }
@@ -296,7 +310,7 @@ namespace Heph
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        constexpr void Transpose(const buffer_size_t& perm)
+        void Transpose(const buffer_size_t& perm)
         {
             *this = this->Transposed(perm);
         }
@@ -311,6 +325,9 @@ namespace Heph
          */
         TSelf Transposed(auto... perm) const
         {
+            static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
+            static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
+
             const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
             return this->Transposed(permArray);
         }
@@ -350,16 +367,23 @@ namespace Heph
 
                 TSelf result(*dynamic_cast<const TSelf*>(this));
 
+                if (this->flags.Test(BufferFlags::TransposeInPlace))
+                {
+                    for (size_t i = 0; i < NDimensions; ++i)
+                    {
+                        result.bufferSize[i] = this->bufferSize[perm[i]];
+                        result.strides[i] = this->strides[perm[i]];
+                    }
+                    return result;
+                }
+
                 for (size_t i = 0; i < NDimensions; ++i)
                 {
                     result.bufferSize[i] = this->bufferSize[perm[i]];
-                    result.strides[i] = this->strides[perm[i]];
                 }
+                result.CalcStrides();
 
-                if (!result.flags.Test(BufferFlags::TransposeInPlace))
-                {
-                    // TODO...
-                }
+                // TODO...
 
                 return result;
             }
@@ -368,15 +392,15 @@ namespace Heph
         /** Releases the resources. */
         virtual void Release()
         {
+            this->bufferSize = BUFFER_SIZE_ZERO;
+            this->strides = BUFFER_SIZE_ZERO;
+            this->flags = BufferFlags::None;
+
             if (this->pData != nullptr)
             {
                 free(this->pData);
                 this->pData = nullptr;
             }
-
-            this->bufferSize = BUFFER_SIZE_ZERO;
-            this->strides = BUFFER_SIZE_ZERO;
-            this->flags = BufferFlags::None;
         }
 
         /** Returns an iterator to the beginning. */
@@ -398,7 +422,7 @@ namespace Heph
         }
 
         /** Returns an iterator to the end. */
-        constexpr iterator end()
+        iterator end()
         {
             if constexpr (NDimensions == 1) return this->begin() + this->Size(0);
             else
@@ -410,7 +434,7 @@ namespace Heph
         }
 
         /** @copydoc end */
-        constexpr const_iterator end() const
+        const_iterator end() const
         {
             if constexpr (NDimensions == 1) return this->begin() + this->Size(0);
             else
@@ -429,7 +453,7 @@ namespace Heph
 
     protected:
         /** Calculates strides. */
-        constexpr void CalcStrides()
+        void CalcStrides()
         {
             if constexpr (NDimensions == 1) this->strides = 1;
             else
@@ -446,7 +470,7 @@ namespace Heph
          *
          * @param bufferSize @copydetails bufferSize
          */
-        static constexpr inline size_t ElementCount(const buffer_size_t& bufferSize)
+        static inline size_t ElementCount(const buffer_size_t& bufferSize)
         {
             if constexpr (NDimensions == 1) return bufferSize;
             else return std::accumulate(bufferSize.begin(), bufferSize.end(), (size_t)1, std::multiplies<size_t>());

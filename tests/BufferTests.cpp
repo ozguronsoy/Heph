@@ -180,8 +180,12 @@ TEST(HephTest, Buffer_Constructors)
 TEST(HephTest, Buffer_Transpose)
 {
     {
-        const TestBuffer<1> b1;
-        const TestBuffer<2> b2;
+        TestBuffer<1> b1;
+        TestBuffer<2> b2;
+
+        EXPECT_THROW(b1.Transpose(0), InvalidOperationException);
+        EXPECT_THROW(b2.Transpose(0, 2), InvalidArgumentException);
+        EXPECT_THROW(b2.Transpose(1, 1), InvalidArgumentException);
 
         EXPECT_THROW(b1.Transposed(0), InvalidOperationException);
         EXPECT_THROW(b2.Transposed(0, 2), InvalidArgumentException);
@@ -201,5 +205,25 @@ TEST(HephTest, Buffer_Transpose)
         for (size_t i = 0; i < b.Size(0); ++i)
             for (size_t j = 0; j < b.Size(1); ++j)
                 EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+
+    {
+        test_data_t b1_expected[2][3] = { {1, 2, 3}, {4, 5, 6} };
+        test_data_t b2_expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
+        TestBuffer<2> b1 = { {1, 2, 3}, {4, 5, 6} };
+
+        b1.SetFlags(BufferFlags::TransposeInPlace);
+        const TestBuffer<2> b2 = b1.Transposed(1, 0);
+
+        EXPECT_EQ(b2.Size(0), b1.Size(1));
+        EXPECT_EQ(b2.Size(1), b1.Size(0));
+
+        for (size_t i = 0; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b1.Size(1); ++j)
+                EXPECT_EQ((b1[i, j]), b1_expected[i][j]);
+
+        for (size_t i = 0; i < b2.Size(0); ++i)
+            for (size_t j = 0; j < b2.Size(1); ++j)
+                EXPECT_EQ((b2[i, j]), b2_expected[i][j]);
     }
 }
