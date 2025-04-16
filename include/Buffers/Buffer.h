@@ -20,11 +20,10 @@ namespace Heph
     /**
     * @brief Container for storing large sequential data.
     *
-    * @tparam TSelf Type of the derived buffer (CRTP).
     * @tparam TData Type of the elements stored in buffer. Must be default constructible and trivally destructible.
     * @tparam NDimensions Number of dimensions.
     */
-    template <typename TSelf, BufferElement TData, size_t NDimensions = 1>
+    template <BufferElement TData, size_t NDimensions = 1>
         requires (NDimensions > 0)
     class Buffer
     {
@@ -65,8 +64,6 @@ namespace Heph
         {
             static_assert(sizeof...(size) <= NDimensions, "Invalid number of size parameters parameters.");
             static_assert((std::is_convertible_v<decltype(size), size_t> && ...), "Invalid type for size parameters, must be convertible to size_t.");
-            static_assert(std::derived_from<TSelf, Buffer<TSelf, TData, NDimensions>>, "TSelf must derive from Buffer<TSelf, TData, NDimensions>.");
-            static_assert(std::is_copy_constructible_v<TSelf> && std::is_copy_assignable_v<TSelf>, "TSelf must be copy constructible and copy assignable.");
 
             if constexpr (sizeof...(size) > 0)
             {
@@ -285,110 +282,6 @@ namespace Heph
             return const_iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
         }
 
-        /**
-         * Transposes a multidimensional buffer.
-         *
-         * @param perm Permutation of the dimensions.
-         * @exception InvalidOperationException
-         * @exception InvalidArgumentException
-         * @exception InsufficientMemoryException
-         */
-        void Transpose(auto... perm)
-        {
-            static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
-            static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
-
-            const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
-            this->Transpose(permArray);
-        }
-
-        /**
-         * Transposes a multidimensional buffer.
-         *
-         * @param perm Permutation of the dimensions.
-         * @exception InvalidOperationException
-         * @exception InvalidArgumentException
-         * @exception InsufficientMemoryException
-         */
-        void Transpose(const buffer_size_t& perm)
-        {
-            *this = this->Transposed(perm);
-        }
-
-        /**
-         * Creates a transposed copy of the multidimensional buffer.
-         *
-         * @param perm Permutation of the dimensions.
-         * @exception InvalidOperationException
-         * @exception InvalidArgumentException
-         * @exception InsufficientMemoryException
-         */
-        TSelf Transposed(auto... perm) const
-        {
-            static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
-            static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
-
-            const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
-            return this->Transposed(permArray);
-        }
-
-        /**
-         * Creates a transposed copy of the multidimensional buffer.
-         *
-         * @param perm Permutation of the dimensions.
-         * @exception InvalidOperationException
-         * @exception InvalidArgumentException
-         * @exception InsufficientMemoryException
-         */
-        TSelf Transposed(const buffer_size_t& perm) const
-        {
-            if constexpr (NDimensions == 1 || !std::equality_comparable<TData>)
-            {
-                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "Cannot transpose a 1D buffer.");
-            }
-            else
-            {
-                // validate perm
-                for (size_t i = 0; i < NDimensions; ++i)
-                {
-                    if (perm[i] >= NDimensions)
-                    {
-                        HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid dimension.");
-                    }
-
-                    for (size_t j = (i + 1); j < NDimensions; ++j)
-                    {
-                        if (perm[i] == perm[j])
-                        {
-                            HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Duplicate dimension not allowed in perm.");
-                        }
-                    }
-                }
-
-                TSelf result(*dynamic_cast<const TSelf*>(this));
-
-                if (this->flags.Test(BufferFlags::TransposeInPlace))
-                {
-                    for (size_t i = 0; i < NDimensions; ++i)
-                    {
-                        result.bufferSize[i] = this->bufferSize[perm[i]];
-                        result.strides[i] = this->strides[perm[i]];
-                    }
-                    return result;
-                }
-
-                for (size_t i = 0; i < NDimensions; ++i)
-                {
-                    result.bufferSize[i] = this->bufferSize[perm[i]];
-                }
-                result.CalcStrides();
-
-                // TODO...
-
-                return result;
-            }
-        }
-
         /** Releases the resources. */
         virtual void Release()
         {
@@ -543,6 +436,87 @@ namespace Heph
             }
 
             pData = pTemp;
+        }
+
+        /**
+         * Transposes a multidimensional buffer.
+         *
+         * @important This method allocates memory for the output buffer, hence no need to allocate in advance.
+         *
+         * @param in The buffer that will be transposed.
+         * @param out The buffer that will store the transposed data.
+         * @param perm Permutation of the dimensions.
+         * @exception InvalidOperationException
+         * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
+         */
+        static void Transpose(const Buffer& in, Buffer& out, const buffer_size_t& perm)
+        {
+            if constexpr (NDimensions == 1 || !std::equality_comparable<TData>)
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "Cannot transpose a 1D buffer.");
+            }
+            else
+            {
+                // validate perm
+                for (size_t i = 0; i < NDimensions; ++i)
+                {
+                    if (perm[i] >= NDimensions)
+                    {
+                        HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid dimension.");
+                    }
+
+                    for (size_t j = (i + 1); j < NDimensions; ++j)
+                    {
+                        if (perm[i] == perm[j])
+                        {
+                            HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Duplicate dimension not allowed in perm.");
+                        }
+                    }
+                }
+
+                if (in.flags.Test(BufferFlags::TransposeInPlace))
+                {
+                    // copy elements to output
+                    if (&in != &out)
+                    {
+                        if (out.IsEmpty() || out.bufferSize != in.bufferSize)
+                        {
+                            Buffer::Reallocate(out.pData, out.ElementCount() * sizeof(TData), in.ElementCount() * sizeof(TData), BufferFlags::AllocUninitialized);
+                            out.bufferSize = in.bufferSize;
+                            out.strides = in.strides;
+                            (void)std::copy(in.begin(), in.end(), out.begin());
+                        }
+                    }
+
+                    // temp instances in case of the input and output buffers are the same buffer.
+                    buffer_size_t newBufferSize;
+                    buffer_size_t newStrides;
+                    
+                    for (size_t i = 0; i < NDimensions; ++i)
+                    {
+                        newBufferSize[i] = in.bufferSize[perm[i]];
+                        newStrides[i] = in.strides[perm[i]];
+                    }
+
+                    out.bufferSize = newBufferSize;
+                    out.strides = newStrides;
+                }
+                else
+                {
+                    buffer_size_t newBufferSize;
+                    for (size_t i = 0; i < NDimensions; ++i)
+                    {
+                        newBufferSize[i] = in.bufferSize[perm[i]];
+                    }
+                    out.bufferSize = newBufferSize;
+                    out.CalcStrides();
+
+                    // TODO...
+                }
+
+                out.flags = in.flags;
+            }
         }
     };
 }

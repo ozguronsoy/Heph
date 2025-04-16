@@ -6,11 +6,12 @@ using test_data_t = int;
 
 template<size_t NDimensions>
     requires (NDimensions > 0 && NDimensions <= 2)
-class TestBuffer : public Buffer<TestBuffer<NDimensions>, test_data_t, NDimensions>
+class TestBuffer : public Buffer<test_data_t, NDimensions>
 {
-    using Base = Buffer<TestBuffer<NDimensions>, test_data_t, NDimensions>;
+    using Base = Buffer<test_data_t, NDimensions>;
     using typename Base::iterator;
     using typename Base::const_iterator;
+    using typename Base::buffer_size_t;
     using initializer_list = std::conditional_t<NDimensions == 1, std::initializer_list<test_data_t>, std::initializer_list<std::initializer_list<test_data_t>>>;
 
 public:
@@ -76,6 +77,20 @@ public:
     TestBuffer& operator=(TestBuffer&& rhs) noexcept
     {
         return reinterpret_cast<TestBuffer&>(Base::operator=(std::move(rhs)));
+    }
+
+    void Transpose(auto... perm)
+    {
+        static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
+        static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
+
+        const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
+        this->Transpose(permArray);
+    }
+
+    void Transpose(const buffer_size_t& perm)
+    {
+        Base::Transpose(*this, *this, perm);
     }
 };
 
@@ -186,10 +201,6 @@ TEST(HephTest, Buffer_Transpose)
         EXPECT_THROW(b1.Transpose(0), InvalidOperationException);
         EXPECT_THROW(b2.Transpose(0, 2), InvalidArgumentException);
         EXPECT_THROW(b2.Transpose(1, 1), InvalidArgumentException);
-
-        EXPECT_THROW(b1.Transposed(0), InvalidOperationException);
-        EXPECT_THROW(b2.Transposed(0, 2), InvalidArgumentException);
-        EXPECT_THROW(b2.Transposed(1, 1), InvalidArgumentException);
     }
 
     {
@@ -205,25 +216,5 @@ TEST(HephTest, Buffer_Transpose)
         for (size_t i = 0; i < b.Size(0); ++i)
             for (size_t j = 0; j < b.Size(1); ++j)
                 EXPECT_EQ((b[i, j]), expected[i][j]);
-    }
-
-    {
-        test_data_t b1_expected[2][3] = { {1, 2, 3}, {4, 5, 6} };
-        test_data_t b2_expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
-        TestBuffer<2> b1 = { {1, 2, 3}, {4, 5, 6} };
-
-        b1.SetFlags(BufferFlags::TransposeInPlace);
-        const TestBuffer<2> b2 = b1.Transposed(1, 0);
-
-        EXPECT_EQ(b2.Size(0), b1.Size(1));
-        EXPECT_EQ(b2.Size(1), b1.Size(0));
-
-        for (size_t i = 0; i < b1.Size(0); ++i)
-            for (size_t j = 0; j < b1.Size(1); ++j)
-                EXPECT_EQ((b1[i, j]), b1_expected[i][j]);
-
-        for (size_t i = 0; i < b2.Size(0); ++i)
-            for (size_t j = 0; j < b2.Size(1); ++j)
-                EXPECT_EQ((b2[i, j]), b2_expected[i][j]);
     }
 }
