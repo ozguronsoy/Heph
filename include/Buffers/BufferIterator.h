@@ -183,6 +183,11 @@ namespace Heph
             return this->ptr == rhs.ptr && this->indices == rhs.indices;
         }
 
+        const buffer_size_t& Indices() const
+        {
+            return this->indices;
+        }
+
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& bufferSize, const buffer_size_t& strides, const auto... indices)

@@ -217,4 +217,18 @@ TEST(HephTest, Buffer_Transpose)
             for (size_t j = 0; j < b.Size(1); ++j)
                 EXPECT_EQ((b[i, j]), expected[i][j]);
     }
+
+    {
+        test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
+
+        b.Transpose(1, 0);
+
+        EXPECT_EQ(b.Size(0), 3);
+        EXPECT_EQ(b.Size(1), 2);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
 }

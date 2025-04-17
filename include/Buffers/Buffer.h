@@ -156,9 +156,11 @@ namespace Heph
         {
             if (&rhs != this)
             {
+                this->Release();
+
                 this->pData = rhs.pData;
-                this->bufferSize = std::move(rhs.bufferSize);
-                this->strides = std::move(rhs.strides);
+                this->bufferSize = rhs.bufferSize;
+                this->strides = rhs.strides;
                 this->flags = rhs.flags;
 
                 rhs.pData = nullptr;
@@ -184,18 +186,25 @@ namespace Heph
             return iterator::template Get<false>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
         }
 
-        /**
-         * Gets the element at the provided index.
-         *
-         * @param indices Indices of the element.
-         * @return Reference to the element.
-         */
+        /** @copydoc operator[] */
+        TData& operator[](const buffer_size_t& indices)
+        {
+            return iterator::template Get<false>(this->pData, this->flags, this->bufferSize, this->strides, indices);
+        }
+
+        /** @copydoc operator[] */
         const TData& operator[](auto... indices) const
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
 
             return const_iterator::template Get<false>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
+        }
+
+        /** @copydoc operator[] */
+        const TData& operator[](const buffer_size_t& indices) const
+        {
+            return const_iterator::template Get<false>(this->pData, this->flags, this->bufferSize, this->strides, indices);
         }
 
         /**
@@ -274,12 +283,24 @@ namespace Heph
         }
 
         /** @copydoc At */
+        TData& At(const buffer_size_t& indices)
+        {
+            return iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, indices);
+        }
+
+        /** @copydoc At */
         const TData& At(auto... indices) const
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
 
             return const_iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
+        }
+
+        /** @copydoc At */
+        const TData& At(const buffer_size_t& indices) const
+        {
+            return const_iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, indices);
         }
 
         /** Releases the resources. */
@@ -458,6 +479,18 @@ namespace Heph
             }
             else
             {
+                const bool sameInstance = &in == &out;
+                const bool inPlace = in.flags.Test(BufferFlags::TransposeInPlace);
+
+                // avoid extra copy for in-place transpose.
+                if (sameInstance && !inPlace)
+                {
+                    Buffer temp;
+                    Buffer::Transpose(in, temp, perm);
+                    out = std::move(temp);
+                    return;
+                }
+
                 // validate perm
                 for (size_t i = 0; i < NDimensions; ++i)
                 {
@@ -475,47 +508,60 @@ namespace Heph
                     }
                 }
 
-                if (in.flags.Test(BufferFlags::TransposeInPlace))
+                if (!sameInstance)
                 {
-                    // copy elements to output
-                    if (&in != &out)
+                    Buffer::Reallocate(out.pData, out.ElementCount() * sizeof(TData), in.ElementCount() * sizeof(TData), BufferFlags::AllocUninitialized);
+                    out.bufferSize = in.bufferSize;
+                    out.strides = in.strides;
+                    out.flags = in.flags;
+                }
+
+                if (inPlace)
+                {
+                    if (sameInstance)
                     {
-                        if (out.IsEmpty() || out.bufferSize != in.bufferSize)
+                        buffer_size_t newBufferSize;
+                        buffer_size_t newStrides;
+
+                        for (size_t i = 0; i < NDimensions; ++i)
                         {
-                            Buffer::Reallocate(out.pData, out.ElementCount() * sizeof(TData), in.ElementCount() * sizeof(TData), BufferFlags::AllocUninitialized);
-                            out.bufferSize = in.bufferSize;
-                            out.strides = in.strides;
-                            (void)std::copy(in.begin(), in.end(), out.begin());
+                            newBufferSize[i] = in.bufferSize[perm[i]];
+                            newStrides[i] = in.strides[perm[i]];
+                        }
+
+                        out.bufferSize = newBufferSize;
+                        out.strides = newStrides;
+                    }
+                    else
+                    {
+                        (void)std::copy(in.begin(), in.end(), out.begin());
+                        for (size_t i = 0; i < NDimensions; ++i)
+                        {
+                            out.bufferSize[i] = in.bufferSize[perm[i]];
+                            out.strides[i] = in.strides[perm[i]];
                         }
                     }
-
-                    // temp instances in case of the input and output buffers are the same buffer.
-                    buffer_size_t newBufferSize;
-                    buffer_size_t newStrides;
-                    
-                    for (size_t i = 0; i < NDimensions; ++i)
-                    {
-                        newBufferSize[i] = in.bufferSize[perm[i]];
-                        newStrides[i] = in.strides[perm[i]];
-                    }
-
-                    out.bufferSize = newBufferSize;
-                    out.strides = newStrides;
                 }
                 else
                 {
-                    buffer_size_t newBufferSize;
                     for (size_t i = 0; i < NDimensions; ++i)
                     {
-                        newBufferSize[i] = in.bufferSize[perm[i]];
+                        out.bufferSize[i] = in.bufferSize[perm[i]];
                     }
-                    out.bufferSize = newBufferSize;
                     out.CalcStrides();
 
-                    // TODO...
+                    // optimize this later
+                    const const_iterator iend = in.cend();
+                    for (const_iterator iit = in.cbegin(); iit != iend; ++iit)
+                    {
+                        buffer_size_t oit;
+                        for (size_t i = 0; i < NDimensions; ++i)
+                        {
+                            oit[i] = iit.Indices()[perm[i]];
+                        }
+                        out[oit] = *iit;
+                    }
                 }
-
-                out.flags = in.flags;
             }
         }
     };
