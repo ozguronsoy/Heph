@@ -25,7 +25,7 @@ namespace Heph
     */
     template <BufferElement TData, size_t NDimensions = 1>
         requires (NDimensions > 0)
-    class Buffer
+    class HEPH_API Buffer
     {
     public:
         /** @brief Type of the iterator used by the Buffer. */

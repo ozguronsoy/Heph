@@ -2,9 +2,7 @@ name: Linux
 
 on:
   push:
-    branches: ["main", "CI"]
   pull_request:
-    branches: ["main"]
 
   workflow_dispatch:
 

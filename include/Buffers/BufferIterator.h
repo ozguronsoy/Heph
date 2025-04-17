@@ -27,7 +27,7 @@ namespace Heph
      */
     template<BufferElement TData, size_t NDimensions>
         requires (NDimensions > 0)
-    class BufferIterator final
+    class HEPH_API BufferIterator final
     {
     public:
         /** @brief Difference type for std::iterator_traits. */

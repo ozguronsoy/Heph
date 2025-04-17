@@ -75,7 +75,7 @@
 namespace Heph
 {
     /** @brief Stores version information for run-time verification. */
-    struct Version
+    struct HEPH_API Version
     {
         /** @brief Indicates significant changes or updates. */
         unsigned int major;
@@ -89,7 +89,7 @@ namespace Heph
     extern HEPH_API const Version version;
 
     /** @brief Defines the supported platforms. */
-    enum class Platform
+    enum Platform
     {
         /** @brief Represents the Windows operating system. */
         Windows,
