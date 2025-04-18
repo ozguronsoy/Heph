@@ -10,6 +10,7 @@
 #include <array>
 #include <functional>
 #include <tuple>
+#include <compare>
 
 /** @file */
 
@@ -176,6 +177,29 @@ namespace Heph
             BufferIterator temp = *this;
             this->operator--();
             return temp;
+        }
+
+        auto operator<=>(const BufferIterator& rhs) const
+        {
+            if (this->indices == rhs.indices)
+                return std::weak_ordering::equivalent;
+
+            if constexpr (NDimensions == 1)
+            {
+                return this->indices > rhs.indices ? std::weak_ordering::greater : std::weak_ordering::less;
+            }
+            else
+            {
+                for (size_t i = 0; i < NDimensions; ++i)
+                {
+                    if (this->indices[i] > rhs.indices[i])
+                        return std::weak_ordering::greater;
+                    else if (this->indices[i] < rhs.indices[i])
+                        return std::weak_ordering::less;
+                }
+            }
+
+            return std::weak_ordering::less;
         }
 
         bool operator==(const BufferIterator& rhs) const
