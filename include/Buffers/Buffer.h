@@ -552,14 +552,14 @@ namespace Heph
 
                     // optimize this later
                     const const_iterator iend = in.cend();
-                    for (const_iterator iit = in.cbegin(); iit != iend; ++iit)
+                    for (const_iterator it = in.cbegin(); it != iend; ++it)
                     {
-                        buffer_size_t oit;
+                        buffer_size_t outputIndices;
                         for (size_t i = 0; i < NDimensions; ++i)
                         {
-                            oit[i] = iit.Indices()[perm[i]];
+                            outputIndices[i] = it.Indices()[perm[i]];
                         }
-                        out[oit] = *iit;
+                        out[outputIndices] = *it;
                     }
                 }
             }

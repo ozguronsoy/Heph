@@ -47,26 +47,26 @@ namespace Heph
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = {};
 
     private:
-        pointer& ptr;
-        const Enum<BufferFlags>& flags;
-        const buffer_size_t& bufferSize;
-        const buffer_size_t& strides;
+        pointer* ppData;
+        Enum<BufferFlags> const* pFlags;
+        buffer_size_t const* pBufferSize;
+        buffer_size_t const* pStrides;
         buffer_size_t indices;
 
     public:
         BufferIterator(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& bufferSize, const buffer_size_t& strides)
-            : ptr(ptr), flags(flags), bufferSize(bufferSize), strides(strides), indices(BUFFER_SIZE_ZERO)
+            : ppData(&ptr), pFlags(&flags), pBufferSize(&bufferSize), pStrides(&strides), indices(BUFFER_SIZE_ZERO)
         {
         }
 
         reference operator*()
         {
-            return BufferIterator::Get<false>(this->ptr, this->flags, this->bufferSize, this->strides, this->indices);
+            return BufferIterator::Get<false>(*this->ppData, *this->pFlags, *this->pBufferSize, *this->pStrides, this->indices);
         }
 
         pointer operator->()
         {
-            return &**this;
+            return &this->operator*();
         }
 
         BufferIterator operator+(size_t i) const
@@ -87,8 +87,8 @@ namespace Heph
 
         BufferIterator& operator+=(size_t i)
         {
-            if constexpr (NDimensions == 1) this->indices = this->flags.Test(BufferFlags::Circular) ? ((this->indices + i) % this->bufferSize) : (this->indices + i);
-            else this->indices[NDimensions - 1] = this->flags.Test(BufferFlags::Circular) ? ((this->indices[NDimensions - 1] + i) % this->bufferSize[NDimensions - 1]) : (this->indices[NDimensions - 1] + i);
+            if constexpr (NDimensions == 1) this->indices = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices + i) % (*this->pBufferSize)) : (this->indices + i);
+            else this->indices[NDimensions - 1] = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices[NDimensions - 1] + i) % (*this->pBufferSize)[NDimensions - 1]) : (this->indices[NDimensions - 1] + i);
 
             return *this;
         }
@@ -100,8 +100,8 @@ namespace Heph
             for (size_t i = 0; i < NDimensions; ++i)
             {
                 this->indices[i] =
-                    this->flags.Test(BufferFlags::Circular)
-                    ? ((this->indices[i] + rhs[i]) % this->bufferSize[i])
+                    (*this->pFlags).Test(BufferFlags::Circular)
+                    ? ((this->indices[i] + rhs[i]) % (*this->pBufferSize)[i])
                     : (this->indices[i] + rhs[i]);
             }
 
@@ -126,8 +126,8 @@ namespace Heph
 
         BufferIterator& operator-=(size_t i)
         {
-            if constexpr (NDimensions == 1) this->indices = this->flags.Test(BufferFlags::Circular) ? ((this->indices - i) % this->bufferSize) : (this->indices - i);
-            else this->indices[NDimensions - 1] = this->flags.Test(BufferFlags::Circular) ? ((this->indices[NDimensions - 1] - i) % this->bufferSize[NDimensions - 1]) : (this->indices[NDimensions - 1] - i);
+            if constexpr (NDimensions == 1) this->indices = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices - i) % (*this->pBufferSize)) : (this->indices - i);
+            else this->indices[NDimensions - 1] = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices[NDimensions - 1] - i) % (*this->pBufferSize)[NDimensions - 1]) : (this->indices[NDimensions - 1] - i);
 
             return *this;
         }
@@ -139,8 +139,8 @@ namespace Heph
             for (size_t i = 0; i < NDimensions; ++i)
             {
                 this->indices[i] =
-                    this->flags.Test(BufferFlags::Circular)
-                    ? ((this->indices[i] - rhs[i]) % this->bufferSize[i])
+                    (*this->pFlags).Test(BufferFlags::Circular)
+                    ? ((this->indices[i] - rhs[i]) % (*this->pBufferSize)[i])
                     : (this->indices[i] - rhs[i]);
             }
 
@@ -180,7 +180,7 @@ namespace Heph
 
         bool operator==(const BufferIterator& rhs) const
         {
-            return this->ptr == rhs.ptr && this->indices == rhs.indices;
+            return this->ppData == rhs.ppData && this->indices == rhs.indices;
         }
 
         const buffer_size_t& Indices() const
@@ -240,7 +240,7 @@ namespace Heph
         void IncrementIndex(size_t n)
         {
             this->indices[n]++;
-            if (this->indices[n] == this->bufferSize[n] && n > 0)
+            if (this->indices[n] == (*this->pBufferSize)[n] && n > 0)
             {
                 this->indices[n] = 0;
                 this->IncrementIndex(n - 1);
@@ -253,7 +253,7 @@ namespace Heph
             {
                 if (n > 0)
                 {
-                    this->indices[n] = this->bufferSize[n] - 1;
+                    this->indices[n] = (*this->pBufferSize)[n] - 1;
                     this->DecrementIndex(n - 1);
                 }
             }
