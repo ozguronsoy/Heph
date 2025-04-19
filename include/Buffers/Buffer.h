@@ -303,6 +303,15 @@ namespace Heph
             return const_iterator::template Get<true>(this->pData, this->flags, this->bufferSize, this->strides, indices);
         }
 
+        /** Sets all elements to default value. */
+        void Reset()
+        {
+            if (!this->IsEmpty())
+            {
+                std::fill(this->begin(), this->end(), TData());
+            }
+        }
+
         /** Releases the resources. */
         virtual void Release()
         {
@@ -464,8 +473,8 @@ namespace Heph
          *
          * @important This method allocates memory for the output buffer, hence no need to allocate in advance.
          *
-         * @param in The buffer that will be transposed.
-         * @param out The buffer that will store the transposed data.
+         * @param in The input buffer.
+         * @param out The output buffer.
          * @param perm Permutation of the dimensions.
          * @exception InvalidOperationException
          * @exception InvalidArgumentException
@@ -523,10 +532,10 @@ namespace Heph
                         buffer_size_t newBufferSize;
                         buffer_size_t newStrides;
 
-                        for (size_t i = 0; i < NDimensions; ++i)
+                        for (size_t d = 0; d < NDimensions; ++d)
                         {
-                            newBufferSize[i] = in.bufferSize[perm[i]];
-                            newStrides[i] = in.strides[perm[i]];
+                            newBufferSize[d] = in.bufferSize[perm[d]];
+                            newStrides[d] = in.strides[perm[d]];
                         }
 
                         out.bufferSize = newBufferSize;
@@ -535,33 +544,75 @@ namespace Heph
                     else
                     {
                         (void)std::copy(in.begin(), in.end(), out.begin());
-                        for (size_t i = 0; i < NDimensions; ++i)
+                        for (size_t d = 0; d < NDimensions; ++d)
                         {
-                            out.bufferSize[i] = in.bufferSize[perm[i]];
-                            out.strides[i] = in.strides[perm[i]];
+                            out.bufferSize[d] = in.bufferSize[perm[d]];
+                            out.strides[d] = in.strides[perm[d]];
                         }
                     }
                 }
                 else
                 {
-                    for (size_t i = 0; i < NDimensions; ++i)
+                    for (size_t d = 0; d < NDimensions; ++d)
                     {
-                        out.bufferSize[i] = in.bufferSize[perm[i]];
+                        out.bufferSize[d] = in.bufferSize[perm[d]];
                     }
                     out.CalcStrides();
 
                     // optimize this later
-                    const const_iterator iend = in.cend();
-                    for (const_iterator it = in.cbegin(); it != iend; ++it)
+                    const const_iterator itEnd = in.cend();
+                    for (const_iterator it = in.cbegin(); it != itEnd; ++it)
                     {
                         buffer_size_t outputIndices;
-                        for (size_t i = 0; i < NDimensions; ++i)
+                        for (size_t d = 0; d < NDimensions; ++d)
                         {
-                            outputIndices[i] = it.Indices()[perm[i]];
+                            outputIndices[d] = it.Indices()[perm[d]];
                         }
                         out[outputIndices] = *it;
                     }
                 }
+            }
+        }
+
+        /**
+         * Swaps the elements of the provided dimension.
+         *
+         * @param buffer The buffer to be reversed.
+         * @param dim 0-based dimension that will be reversed.
+         * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
+         */
+        static void Reverse(Buffer& buffer, size_t dim)
+        {
+            if (dim >= NDimensions)
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid dimension.");
+            }
+
+            if constexpr (NDimensions == 1)
+            {
+                const size_t halfSize = buffer.bufferSize / 2;
+                for (size_t i = 0; i < halfSize; ++i)
+                {
+                    std::swap(buffer[i], buffer[buffer.bufferSize - i - 1]);
+                }
+            }
+            else
+            {
+
+                const size_t dimSize = buffer.bufferSize[dim];
+                buffer.bufferSize[dim] /= 2;
+
+                const iterator itEnd = buffer.end();
+                for (iterator it = buffer.begin(); it < itEnd; ++it)
+                {
+                    buffer_size_t secondElementIndices = it.Indices();
+                    secondElementIndices[dim] = buffer.bufferSize[dim] - secondElementIndices[dim] - 1;
+
+                    std::swap(*it, buffer[secondElementIndices]);
+                }
+
+                buffer.bufferSize[dim] = dimSize;
             }
         }
     };
