@@ -281,9 +281,9 @@ TEST(HephTest, Buffer_Reverse)
             for (size_t j = 0; j < b.Size(1); ++j)
                 EXPECT_EQ((b[i, j]), (expected0[i][j]));
 
-        // b.Reverse(1);
-        // for (size_t i = 0; i < b.Size(0); ++i)
-        //     for (size_t j = 0; j < b.Size(1); ++j)
-        //         EXPECT_EQ((b[i, j]), (expected1[i][j]));
+        b.Reverse(1);
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), (expected1[i][j]));
     }
 }
