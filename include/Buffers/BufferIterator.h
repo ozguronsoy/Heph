@@ -88,8 +88,7 @@ namespace Heph
 
         BufferIterator& operator+=(size_t i)
         {
-            if constexpr (NDimensions == 1) this->indices = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices + i) % (*this->pBufferSize)) : (this->indices + i);
-            else this->indices[NDimensions - 1] = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices[NDimensions - 1] + i) % (*this->pBufferSize)[NDimensions - 1]) : (this->indices[NDimensions - 1] + i);
+            this->IncrementIndex(NDimensions - 1, i);
 
             return *this;
         }
@@ -100,10 +99,7 @@ namespace Heph
         {
             for (size_t i = 0; i < NDimensions; ++i)
             {
-                this->indices[i] =
-                    (*this->pFlags).Test(BufferFlags::Circular)
-                    ? ((this->indices[i] + rhs[i]) % (*this->pBufferSize)[i])
-                    : (this->indices[i] + rhs[i]);
+                this->IncrementIndex(i, rhs[i]);
             }
 
             return *this;
@@ -127,9 +123,7 @@ namespace Heph
 
         BufferIterator& operator-=(size_t i)
         {
-            if constexpr (NDimensions == 1) this->indices = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices - i) % (*this->pBufferSize)) : (this->indices - i);
-            else this->indices[NDimensions - 1] = (*this->pFlags).Test(BufferFlags::Circular) ? ((this->indices[NDimensions - 1] - i) % (*this->pBufferSize)[NDimensions - 1]) : (this->indices[NDimensions - 1] - i);
-
+            this->DecrementIndex(NDimensions - 1, i);
             return *this;
         }
 
@@ -139,10 +133,7 @@ namespace Heph
         {
             for (size_t i = 0; i < NDimensions; ++i)
             {
-                this->indices[i] =
-                    (*this->pFlags).Test(BufferFlags::Circular)
-                    ? ((this->indices[i] - rhs[i]) % (*this->pBufferSize)[i])
-                    : (this->indices[i] - rhs[i]);
+                this->DecrementIndex(i, rhs[i]);
             }
 
             return *this;
@@ -261,29 +252,39 @@ namespace Heph
         }
 
     private:
-        void IncrementIndex(size_t n)
+        void IncrementIndex(size_t dim, size_t n = 1)
         {
-            this->indices[n]++;
-            if (this->indices[n] == (*this->pBufferSize)[n] && n > 0)
+            if constexpr (NDimensions == 1) this->indices += n;
+            else
             {
-                this->indices[n] = 0;
-                this->IncrementIndex(n - 1);
+                this->indices[dim] += n;
+
+                if (dim > 0)
+                {
+                    n = this->indices[dim] / (*this->pBufferSize)[dim];
+                    this->indices[dim] %= (*this->pBufferSize)[dim];
+                    this->IncrementIndex(dim - 1, n);
+                }
             }
         }
 
-        void DecrementIndex(size_t n)
+        void DecrementIndex(size_t dim, size_t n = 1)
         {
-            if (this->indices[n] == 0)
-            {
-                if (n > 0)
-                {
-                    this->indices[n] = (*this->pBufferSize)[n] - 1;
-                    this->DecrementIndex(n - 1);
-                }
-            }
+            if constexpr (NDimensions == 1) this->indices -= n;
             else
             {
-                this->indices[n]--;
+                ssize_t newIndex = static_cast<ssize_t>(this->indices[dim]) - static_cast<ssize_t>(n);
+
+                if (newIndex < 0)
+                {
+                    this->indices[dim] = (*this->pBufferSize)[dim] + newIndex;
+                    n = ((-newIndex) % (*this->pBufferSize)[dim]) + 1;
+                    this->DecrementIndex(dim - 1, n);
+                }
+                else
+                {
+                    this->indices[dim] = newIndex;
+                }
             }
         }
     };

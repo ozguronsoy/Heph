@@ -347,25 +347,13 @@ namespace Heph
         /** Returns an iterator to the end. */
         iterator end()
         {
-            if constexpr (NDimensions == 1) return this->begin() + this->Size(0);
-            else
-            {
-                buffer_size_t bufferSize = BUFFER_SIZE_ZERO;
-                bufferSize[0] = NDimensions;
-                return this->begin() + bufferSize;
-            }
+            return this->begin() + this->ElementCount();
         }
 
         /** @copydoc end */
         const_iterator end() const
         {
-            if constexpr (NDimensions == 1) return this->begin() + this->Size(0);
-            else
-            {
-                buffer_size_t bufferSize = BUFFER_SIZE_ZERO;
-                bufferSize[0] = NDimensions;
-                return this->begin() + bufferSize;
-            }
+            return this->begin() + this->ElementCount();
         }
 
         /** @copydoc end */
@@ -383,7 +371,7 @@ namespace Heph
             {
                 for (size_t i = 0; i < NDimensions; ++i)
                 {
-                    this->strides[i] = std::accumulate(this->bufferSize.begin() + i + 1, this->bufferSize.end(), (size_t)1, std::multiplies<size_t>());
+                    this->strides[i] = std::accumulate(this->bufferSize.begin() + i + 1, this->bufferSize.end(), 1uz, std::multiplies<size_t>());
                 }
             }
         }
@@ -396,7 +384,7 @@ namespace Heph
         static inline size_t ElementCount(const buffer_size_t& bufferSize)
         {
             if constexpr (NDimensions == 1) return bufferSize;
-            else return std::accumulate(bufferSize.begin(), bufferSize.end(), (size_t)1, std::multiplies<size_t>());
+            else return std::accumulate(bufferSize.begin(), bufferSize.end(), 1uz, std::multiplies<size_t>());
         }
 
         /**
@@ -580,7 +568,6 @@ namespace Heph
          * @param buffer The buffer to be reversed.
          * @param dim 0-based dimension that will be reversed.
          * @exception InvalidArgumentException
-         * @exception InsufficientMemoryException
          */
         static void Reverse(Buffer& buffer, size_t dim)
         {
@@ -607,7 +594,7 @@ namespace Heph
                 for (iterator it = buffer.begin(); it < itEnd; ++it)
                 {
                     buffer_size_t secondElementIndices = it.Indices();
-                    secondElementIndices[dim] = buffer.bufferSize[dim] - secondElementIndices[dim] - 1;
+                    secondElementIndices[dim] = dimSize - secondElementIndices[dim] - 1;
 
                     std::swap(*it, buffer[secondElementIndices]);
                 }

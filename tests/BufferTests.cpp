@@ -92,6 +92,11 @@ public:
     {
         Base::Transpose(*this, *this, perm);
     }
+
+    void Reverse(size_t dim)
+    {
+        Base::Reverse(*this, dim);
+    }
 };
 
 TEST(HephTest, Buffer_Constructors)
@@ -192,6 +197,23 @@ TEST(HephTest, Buffer_Constructors)
     }
 }
 
+TEST(HephTest, Buffer_Reset)
+{
+    {
+        TestBuffer<1> b = { 1, 2, 3, 4, 5 };
+        b.Reset();
+        for (const test_data_t& element : b)
+            EXPECT_EQ(element, 0);
+    }
+
+    {
+        TestBuffer<2> b = { {1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15} };
+        b.Reset();
+        for (const test_data_t& element : b)
+            EXPECT_EQ(element, 0);
+    }
+}
+
 TEST(HephTest, Buffer_Transpose)
 {
     {
@@ -230,5 +252,38 @@ TEST(HephTest, Buffer_Transpose)
         for (size_t i = 0; i < b.Size(0); ++i)
             for (size_t j = 0; j < b.Size(1); ++j)
                 EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+}
+
+TEST(HephTest, Buffer_Reverse)
+{
+    {
+        constexpr std::array<test_data_t, 5> expected = { 5, 4, 3, 2, 1 };
+        TestBuffer<1> b = { 1, 2, 3, 4, 5 };
+
+        EXPECT_THROW(b.Reverse(1), InvalidArgumentException);
+        b.Reverse(0);
+
+        for (size_t i = 0; i < b.Size(); ++i)
+            EXPECT_EQ(b[i], expected[i]);
+    }
+
+    {
+        constexpr test_data_t expected0[2][4] = { {5, 6, 7, 8}, {1, 2, 3, 4} };
+        constexpr test_data_t expected1[2][4] = { {8, 7, 6, 5}, {4, 3, 2, 1} };
+        TestBuffer<2> b = { {1, 2, 3, 4}, {5, 6, 7, 8} };
+
+        EXPECT_EQ(b.Size(0), 2);
+        EXPECT_EQ(b.Size(1), 4);
+
+        b.Reverse(0);
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), (expected0[i][j]));
+
+        // b.Reverse(1);
+        // for (size_t i = 0; i < b.Size(0); ++i)
+        //     for (size_t j = 0; j < b.Size(1); ++j)
+        //         EXPECT_EQ((b[i, j]), (expected1[i][j]));
     }
 }
