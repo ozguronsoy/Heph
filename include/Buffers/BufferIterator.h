@@ -273,6 +273,7 @@ namespace Heph
             if constexpr (NDimensions == 1) this->indices -= n;
             else
             {
+                using ssize_t = std::make_signed_t<size_t>;
                 ssize_t newIndex = static_cast<ssize_t>(this->indices[dim]) - static_cast<ssize_t>(n);
 
                 if (newIndex < 0)
