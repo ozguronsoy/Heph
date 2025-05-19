@@ -50,19 +50,19 @@ namespace Heph
     private:
         pointer* ppData;
         Enum<BufferFlags> const* pFlags;
-        buffer_size_t const* pBufferSize;
+        buffer_size_t const* pSize;
         buffer_size_t const* pStrides;
         buffer_size_t indices;
 
     public:
-        BufferIterator(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& bufferSize, const buffer_size_t& strides)
-            : ppData(&ptr), pFlags(&flags), pBufferSize(&bufferSize), pStrides(&strides), indices(BUFFER_SIZE_ZERO)
+        BufferIterator(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides)
+            : ppData(&ptr), pFlags(&flags), pSize(&size), pStrides(&strides), indices(BUFFER_SIZE_ZERO)
         {
         }
 
         reference operator*()
         {
-            return BufferIterator::Get<false>(*this->ppData, *this->pFlags, *this->pBufferSize, *this->pStrides, this->indices);
+            return BufferIterator::Get<false>(*this->ppData, *this->pFlags, *this->pSize, *this->pStrides, this->indices);
         }
 
         pointer operator->()
@@ -205,29 +205,29 @@ namespace Heph
 
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& bufferSize, const buffer_size_t& strides, const auto... indices)
+        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
 
             const buffer_size_t indicesArray = { std::forward<size_t>(static_cast<size_t>(indices))... };
-            return BufferIterator::Get<CheckErrors>(ptr, flags, bufferSize, strides, indicesArray);
+            return BufferIterator::Get<CheckErrors>(ptr, flags, size, strides, indicesArray);
         }
 
         template<bool CheckErrors>
-        static reference Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& bufferSize, const buffer_size_t& strides, const buffer_size_t& indices)
+        static reference Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const buffer_size_t& indices)
         {
             if constexpr (NDimensions == 1)
             {
                 if constexpr (CheckErrors)
                 {
-                    if (indices >= bufferSize)
+                    if (indices >= size)
                     {
                         HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
                     }
                 }
 
-                return flags.Test(BufferFlags::Circular) ? (ptr[indices % bufferSize]) : (ptr[indices]);
+                return flags.Test(BufferFlags::Circular) ? (ptr[indices % size]) : (ptr[indices]);
             }
             else
             {
@@ -236,7 +236,7 @@ namespace Heph
                 {
                     if constexpr (CheckErrors)
                     {
-                        if (indices[i] >= bufferSize[i])
+                        if (indices[i] >= size[i])
                         {
                             HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
                         }
@@ -244,7 +244,7 @@ namespace Heph
 
                     n +=
                         flags.Test(BufferFlags::Circular)
-                        ? ((indices[i] % bufferSize[i]) * strides[i])
+                        ? ((indices[i] % size[i]) * strides[i])
                         : (indices[i] * strides[i]);
                 }
                 return ptr[n];
@@ -261,8 +261,8 @@ namespace Heph
 
                 if (dim > 0)
                 {
-                    n = this->indices[dim] / (*this->pBufferSize)[dim];
-                    this->indices[dim] %= (*this->pBufferSize)[dim];
+                    n = this->indices[dim] / (*this->pSize)[dim];
+                    this->indices[dim] %= (*this->pSize)[dim];
                     this->IncrementIndex(dim - 1, n);
                 }
             }
@@ -278,8 +278,8 @@ namespace Heph
 
                 if (newIndex < 0)
                 {
-                    this->indices[dim] = (*this->pBufferSize)[dim] + newIndex;
-                    n = ((-newIndex) % (*this->pBufferSize)[dim]) + 1;
+                    this->indices[dim] = (*this->pSize)[dim] + newIndex;
+                    n = ((-newIndex) % (*this->pSize)[dim]) + 1;
                     this->DecrementIndex(dim - 1, n);
                 }
                 else

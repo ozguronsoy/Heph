@@ -8,6 +8,7 @@ template<size_t NDimensions>
     requires (NDimensions > 0 && NDimensions <= 2)
 class TestBuffer : public Buffer<test_data_t, NDimensions>
 {
+public:
     using Base = Buffer<test_data_t, NDimensions>;
     using typename Base::iterator;
     using typename Base::const_iterator;
@@ -39,15 +40,15 @@ public:
             {
                 this->pData = Base::Allocate(rhs.size() * sizeof(test_data_t), BufferFlags::AllocUninitialized);
                 (void)std::copy(rhs.begin(), rhs.end(), this->begin());
-                this->bufferSize = rhs.size();
+                this->size = rhs.size();
             }
             else
             {
                 const size_t s1 = rhs.begin()->size();
                 if (s1 == 0) return *this;
 
-                this->bufferSize[0] = rhs.size();
-                this->bufferSize[1] = s1;
+                this->size[0] = rhs.size();
+                this->size[1] = s1;
 
                 this->CalcStrides();
 
@@ -91,6 +92,15 @@ public:
     void Transpose(const buffer_size_t& perm)
     {
         Base::Transpose(*this, *this, perm);
+    }
+
+    void Resize(auto... newSize)
+    {
+        static_assert(sizeof...(newSize) > 0 && sizeof...(newSize) <= NDimensions, "Invalid number of newSize parametrs");
+        static_assert((std::is_convertible_v<decltype(newSize), size_t> && ...), "Invalid type for newSize parameters, must be convertible to size_t.");
+
+        const buffer_size_t ns = { std::forward<size_t>(static_cast<size_t>(newSize))... };
+        Base::Resize(*this, ns);
     }
 
     void Reverse(size_t dim)
@@ -194,6 +204,61 @@ TEST(HephTest, Buffer_Constructors)
 
         EXPECT_EQ((b2[b2.Size(0) + 1, 0]), (b2[1, 0]));
         EXPECT_EQ((b2[b2.Size(0) + 2, 0]), (b2[2, 0]));
+    }
+}
+
+TEST(HephTest, Buffer_Resize)
+{
+    {
+        constexpr test_data_t expected0[8] = { 1, 2, 3, 4, 5, 0, 0, 0 };
+        
+        TestBuffer<1> b = { 1, 2, 3, 4, 5 };
+
+        b.Resize(8);
+        EXPECT_EQ(b.Size(), 8);
+
+        for (size_t i = 0; i < b.Size(); ++i)
+            EXPECT_EQ(b[i], expected0[i]);
+
+        b.Resize(3);
+        EXPECT_EQ(b.Size(), 3);
+        EXPECT_TRUE(b[0] == 1 && b[1] == 2 && b[2] == 3);
+
+        b.Resize(0);
+        EXPECT_EQ(b.Size(), 0);
+        EXPECT_EQ(b.ElementCount(), 0);
+        EXPECT_TRUE(b.IsEmpty());
+    }
+
+    {
+        constexpr TestBuffer<2>::buffer_size_t expected_size0 = { 2, 7 };
+        constexpr TestBuffer<2>::buffer_size_t expected_size1 = { 4, 3 };
+        constexpr TestBuffer<2>::buffer_size_t expected_size2 = { 0, 0 };
+        constexpr test_data_t expected0[2][7] = { {1, 2, 3, 4, 5, 0, 0}, {6, 7, 8, 9, 10, 0, 0} };
+        constexpr test_data_t expected1[4][3] = { {1, 2, 3}, { 6, 7, 8 }, {0, 0, 0}, {0, 0, 0} };
+
+        TestBuffer<2> b = { {1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15} };
+
+        b.Resize(2, 7);
+        EXPECT_EQ(b.Size(), expected_size0);
+        EXPECT_EQ(b.ElementCount(), 14);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected0[i][j]);
+
+        b.Resize(4, 3);
+        EXPECT_EQ(b.Size(), expected_size1);
+        EXPECT_EQ(b.ElementCount(), 12);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected1[i][j]);
+
+        b.Resize(2, 0);
+        EXPECT_EQ(b.Size(), expected_size2);
+        EXPECT_EQ(b.ElementCount(), 0);
+        EXPECT_TRUE(b.IsEmpty());
     }
 }
 
