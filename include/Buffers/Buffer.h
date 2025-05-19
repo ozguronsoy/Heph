@@ -463,6 +463,62 @@ namespace Heph
         }
 
         /**
+         * Removes a section of the buffer.
+         *
+         * @param buffer The buffer to be cut.
+         * @param index Index of the first element that will be removed.
+         * @param size Number of elements to remove.
+         * @exception InvalidArgumentException
+         */
+        static void Cut(Buffer& buffer, size_t index, size_t size)
+        {
+            if (index >= buffer.Size(0))
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
+            }
+
+            if (index == 0 && size >= buffer.Size(0))
+            {
+                buffer.Release();
+                return;
+            }
+
+            if (index + size > buffer.Size(0))
+            {
+                size = buffer.Size(0) - index;
+            }
+
+            buffer_size_t newSize = buffer.size;
+            if constexpr (NDimensions == 1)
+                newSize -= size;
+            else
+                newSize[0] -= size;
+
+            Buffer temp(BufferFlags::AllocUninitialized, newSize);
+
+            const_iterator itBuffer = buffer.cbegin();
+            itBuffer.IncrementIndex(0, index);
+
+            if (index > 0)
+                std::copy(buffer.cbegin(), itBuffer, temp.begin());
+
+            if (index + size < buffer.Size(0))
+            {
+                iterator itTemp = temp.begin();
+                itTemp.IncrementIndex(0, index);
+                itBuffer.IncrementIndex(0, size);
+
+                std::copy(itBuffer, buffer.cend(), itTemp);
+            }
+
+            buffer.pData = temp.pData;
+            temp.pData = nullptr;
+            
+            buffer.size = newSize;
+            buffer.CalcStrides();
+        }
+
+        /**
          * Transposes a multidimensional buffer.
          *
          * @important This method allocates memory for the output buffer, hence no need to allocate in advance.
@@ -569,9 +625,10 @@ namespace Heph
         }
 
         /**
-         * @brief Changes the size of the buffer.<br>
+         * Changes the size of the buffer.<br>
          * If the new size is less than the old, elements at the end will be removed.
          *
+         * @param buffer The buffer to be resized.
          * @param newSize New size of the buffer.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
@@ -604,7 +661,8 @@ namespace Heph
                             *it = TData();
                     }
 
-                    buffer = std::move(temp);
+                    buffer.pData = temp.pData;
+                    temp.pData = nullptr;
                 }
 
                 buffer.size = newSize;

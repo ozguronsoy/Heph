@@ -89,6 +89,11 @@ public:
         this->Transpose(permArray);
     }
 
+    void Cut(size_t index, size_t size)
+    {
+        Base::Cut(*this, index, size);
+    }
+
     void Transpose(const buffer_size_t& perm)
     {
         Base::Transpose(*this, *this, perm);
@@ -207,11 +212,163 @@ TEST(HephTest, Buffer_Constructors)
     }
 }
 
+TEST(HephTest, Buffer_Reset)
+{
+    {
+        TestBuffer<1> b = { 1, 2, 3, 4, 5 };
+        b.Reset();
+        for (const test_data_t& element : b)
+            EXPECT_EQ(element, 0);
+    }
+
+    {
+        TestBuffer<2> b = { {1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15} };
+        b.Reset();
+        for (const test_data_t& element : b)
+            EXPECT_EQ(element, 0);
+    }
+}
+
+TEST(HephTest, Buffer_Cut)
+{
+    {
+        constexpr test_data_t expected[4] = { 1, 2, 6, 7 };
+        TestBuffer<1> b = { 1, 2, 3, 4, 5, 6, 7 };
+
+        b.Cut(2, 3);
+        EXPECT_EQ(b.ElementCount(), 4);
+        for (size_t i = 0; i < b.Size(); ++i)
+            EXPECT_EQ(b[i], expected[i]);
+    }
+
+    {
+        constexpr test_data_t expected[4] = { 5, 6, 7 };
+        TestBuffer<1> b = { 1, 2, 3, 4, 5, 6, 7 };
+
+        b.Cut(0, 4);
+        EXPECT_EQ(b.ElementCount(), 3);
+        for (size_t i = 0; i < b.Size(); ++i)
+            EXPECT_EQ(b[i], expected[i]);
+    }
+
+    {
+        constexpr test_data_t expected[4] = { 1, 2, 3, 4 };
+        TestBuffer<1> b = { 1, 2, 3, 4, 5, 6, 7 };
+
+        b.Cut(4, 10);
+        EXPECT_EQ(b.ElementCount(), 4);
+        for (size_t i = 0; i < b.Size(); ++i)
+            EXPECT_EQ(b[i], expected[i]);
+    }
+
+    {
+        TestBuffer<1> b = { 1, 2, 3, 4, 5, 6, 7 };
+
+        EXPECT_THROW(b.Cut(10, 3), InvalidArgumentException);
+
+        b.Cut(0, 100);
+        EXPECT_EQ(b.Size(), 0);
+        EXPECT_TRUE(b.IsEmpty());
+    }
+
+    {
+        constexpr test_data_t expected[2][3] = { {1, 2, 3}, {13, 14, 15} };
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+
+        b.Cut(1, 3);
+        EXPECT_EQ(b.Size(0), 2);
+        EXPECT_EQ(b.Size(1), 3);
+        EXPECT_EQ(b.ElementCount(), 6);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+
+    {
+        constexpr test_data_t expected[1][3] = { {13, 14, 15} };
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+
+        b.Cut(0, 4);
+        EXPECT_EQ(b.Size(0), 1);
+        EXPECT_EQ(b.Size(1), 3);
+        EXPECT_EQ(b.ElementCount(), 3);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+
+    {
+        constexpr test_data_t expected[3][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9} };
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+
+        b.Cut(3, 10);
+        EXPECT_EQ(b.Size(0), 3);
+        EXPECT_EQ(b.Size(1), 3);
+        EXPECT_EQ(b.ElementCount(), 9);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+
+    {
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+
+        EXPECT_THROW(b.Cut(10, 2), InvalidArgumentException);
+        b.Cut(0, 100);
+        EXPECT_EQ(b.ElementCount(), 0);
+        EXPECT_TRUE(b.IsEmpty());
+    }
+}
+
+TEST(HephTest, Buffer_Transpose)
+{
+    {
+        TestBuffer<1> b1;
+        TestBuffer<2> b2;
+
+        EXPECT_THROW(b1.Transpose(0), InvalidOperationException);
+        EXPECT_THROW(b2.Transpose(0, 2), InvalidArgumentException);
+        EXPECT_THROW(b2.Transpose(1, 1), InvalidArgumentException);
+    }
+
+    {
+        test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
+
+        b.SetFlags(BufferFlags::TransposeInPlace);
+        b.Transpose(1, 0);
+
+        EXPECT_EQ(b.Size(0), 3);
+        EXPECT_EQ(b.Size(1), 2);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+
+    {
+        test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
+
+        b.Transpose(1, 0);
+
+        EXPECT_EQ(b.Size(0), 3);
+        EXPECT_EQ(b.Size(1), 2);
+
+        for (size_t i = 0; i < b.Size(0); ++i)
+            for (size_t j = 0; j < b.Size(1); ++j)
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+    }
+}
+
 TEST(HephTest, Buffer_Resize)
 {
     {
         constexpr test_data_t expected0[8] = { 1, 2, 3, 4, 5, 0, 0, 0 };
-        
+
         TestBuffer<1> b = { 1, 2, 3, 4, 5 };
 
         b.Resize(8);
@@ -259,64 +416,6 @@ TEST(HephTest, Buffer_Resize)
         EXPECT_EQ(b.Size(), expected_size2);
         EXPECT_EQ(b.ElementCount(), 0);
         EXPECT_TRUE(b.IsEmpty());
-    }
-}
-
-TEST(HephTest, Buffer_Reset)
-{
-    {
-        TestBuffer<1> b = { 1, 2, 3, 4, 5 };
-        b.Reset();
-        for (const test_data_t& element : b)
-            EXPECT_EQ(element, 0);
-    }
-
-    {
-        TestBuffer<2> b = { {1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15} };
-        b.Reset();
-        for (const test_data_t& element : b)
-            EXPECT_EQ(element, 0);
-    }
-}
-
-TEST(HephTest, Buffer_Transpose)
-{
-    {
-        TestBuffer<1> b1;
-        TestBuffer<2> b2;
-
-        EXPECT_THROW(b1.Transpose(0), InvalidOperationException);
-        EXPECT_THROW(b2.Transpose(0, 2), InvalidArgumentException);
-        EXPECT_THROW(b2.Transpose(1, 1), InvalidArgumentException);
-    }
-
-    {
-        test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
-        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
-
-        b.SetFlags(BufferFlags::TransposeInPlace);
-        b.Transpose(1, 0);
-
-        EXPECT_EQ(b.Size(0), 3);
-        EXPECT_EQ(b.Size(1), 2);
-
-        for (size_t i = 0; i < b.Size(0); ++i)
-            for (size_t j = 0; j < b.Size(1); ++j)
-                EXPECT_EQ((b[i, j]), expected[i][j]);
-    }
-
-    {
-        test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
-        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
-
-        b.Transpose(1, 0);
-
-        EXPECT_EQ(b.Size(0), 3);
-        EXPECT_EQ(b.Size(1), 2);
-
-        for (size_t i = 0; i < b.Size(0); ++i)
-            for (size_t j = 0; j < b.Size(1); ++j)
-                EXPECT_EQ((b[i, j]), expected[i][j]);
     }
 }
 

@@ -203,6 +203,43 @@ namespace Heph
             return this->indices;
         }
 
+        void IncrementIndex(size_t dim, size_t n = 1)
+        {
+            if constexpr (NDimensions == 1) this->indices += n;
+            else
+            {
+                this->indices[dim] += n;
+
+                if (dim > 0)
+                {
+                    n = this->indices[dim] / (*this->pSize)[dim];
+                    this->indices[dim] %= (*this->pSize)[dim];
+                    this->IncrementIndex(dim - 1, n);
+                }
+            }
+        }
+
+        void DecrementIndex(size_t dim, size_t n = 1)
+        {
+            if constexpr (NDimensions == 1) this->indices -= n;
+            else
+            {
+                using ssize_t = std::make_signed_t<size_t>;
+                ssize_t newIndex = static_cast<ssize_t>(this->indices[dim]) - static_cast<ssize_t>(n);
+
+                if (newIndex < 0)
+                {
+                    this->indices[dim] = (*this->pSize)[dim] + newIndex;
+                    n = ((-newIndex) % (*this->pSize)[dim]) + 1;
+                    this->DecrementIndex(dim - 1, n);
+                }
+                else
+                {
+                    this->indices[dim] = newIndex;
+                }
+            }
+        }
+
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
@@ -248,44 +285,6 @@ namespace Heph
                         : (indices[i] * strides[i]);
                 }
                 return ptr[n];
-            }
-        }
-
-    private:
-        void IncrementIndex(size_t dim, size_t n = 1)
-        {
-            if constexpr (NDimensions == 1) this->indices += n;
-            else
-            {
-                this->indices[dim] += n;
-
-                if (dim > 0)
-                {
-                    n = this->indices[dim] / (*this->pSize)[dim];
-                    this->indices[dim] %= (*this->pSize)[dim];
-                    this->IncrementIndex(dim - 1, n);
-                }
-            }
-        }
-
-        void DecrementIndex(size_t dim, size_t n = 1)
-        {
-            if constexpr (NDimensions == 1) this->indices -= n;
-            else
-            {
-                using ssize_t = std::make_signed_t<size_t>;
-                ssize_t newIndex = static_cast<ssize_t>(this->indices[dim]) - static_cast<ssize_t>(n);
-
-                if (newIndex < 0)
-                {
-                    this->indices[dim] = (*this->pSize)[dim] + newIndex;
-                    n = ((-newIndex) % (*this->pSize)[dim]) + 1;
-                    this->DecrementIndex(dim - 1, n);
-                }
-                else
-                {
-                    this->indices[dim] = newIndex;
-                }
             }
         }
     };
