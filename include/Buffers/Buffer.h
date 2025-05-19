@@ -599,9 +599,9 @@ namespace Heph
                     {
                         const buffer_size_t indices = it.Indices();
                         if (std::ranges::equal(indices, buffer.size, std::less()))
-                        {
                             *it = buffer[indices];
-                        }
+                        else
+                            *it = TData();
                     }
 
                     buffer = std::move(temp);
