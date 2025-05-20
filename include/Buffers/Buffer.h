@@ -450,7 +450,7 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to reallocate {} bytes.", newSize_bytes));
             }
 
-            if (newSize_bytes > oldSize_bytes && !flags.Test(BufferFlags::AllocUninitialized))
+            if (newElementCount > oldElementCount && !flags.Test(BufferFlags::AllocUninitialized))
             {
                 std::fill(
                     reinterpret_cast<uint8_t*>(pTemp) + oldSize_bytes,
@@ -463,12 +463,68 @@ namespace Heph
         }
 
         /**
+         * Copies a section of the buffer.
+         *
+         * @important This method allocates memory for the destination buffer, hence no need to allocate in advance.
+         *
+         * @param src The source buffer.
+         * @param dest The destination buffer.
+         * @param index Index of the first element that will be copied.
+         * @param size Number of elements to copy.
+         * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
+         */
+        static void SubBuffer(const Buffer& src, Buffer& dest, size_t index, size_t size)
+        {
+            if (index >= src.Size(0))
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
+            }
+
+            if (size == 0) return;
+
+            buffer_size_t oldSize = src.size; // do not initialize the section that will be copied.
+            buffer_size_t newSize = src.size;
+            if constexpr (NDimensions == 1)
+            {
+                oldSize -= index;
+                newSize = size;
+            }
+            else
+            {
+                oldSize[0] -= index;
+                newSize[0] = size;
+            }
+
+            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize), src.flags);
+            dest.flags = src.flags;
+            dest.size = newSize;
+            dest.CalcStrides();
+
+            if (index + size > src.Size(0))
+            {
+                size = src.Size(0) - index;
+            }
+
+            {
+                const_iterator itSrcStart = src.cbegin();
+                itSrcStart.IncrementIndex(0, index);
+
+                const_iterator itSrcEnd = src.cbegin();
+                itSrcEnd.IncrementIndex(0, index + size);
+
+                (void)std::copy(itSrcStart, itSrcEnd, dest.begin());
+            }
+        }
+
+        /**
          * Removes a section of the buffer.
          *
          * @param buffer The buffer to be cut.
          * @param index Index of the first element that will be removed.
          * @param size Number of elements to remove.
          * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
          */
         static void Cut(Buffer& buffer, size_t index, size_t size)
         {
@@ -476,6 +532,8 @@ namespace Heph
             {
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
             }
+
+            if (size == 0) return;
 
             if (index == 0 && size >= buffer.Size(0))
             {
@@ -500,7 +558,7 @@ namespace Heph
             itBuffer.IncrementIndex(0, index);
 
             if (index > 0)
-                std::copy(buffer.cbegin(), itBuffer, temp.begin());
+                (void)std::copy(buffer.cbegin(), itBuffer, temp.begin());
 
             if (index + size < buffer.Size(0))
             {
@@ -508,12 +566,12 @@ namespace Heph
                 itTemp.IncrementIndex(0, index);
                 itBuffer.IncrementIndex(0, size);
 
-                std::copy(itBuffer, buffer.cend(), itTemp);
+                (void)std::copy(itBuffer, buffer.cend(), itTemp);
             }
 
             buffer.pData = temp.pData;
             temp.pData = nullptr;
-            
+
             buffer.size = newSize;
             buffer.CalcStrides();
         }
@@ -521,16 +579,16 @@ namespace Heph
         /**
          * Transposes a multidimensional buffer.
          *
-         * @important This method allocates memory for the output buffer, hence no need to allocate in advance.
+         * @important This method allocates memory for the destination buffer, hence no need to allocate in advance.
          *
-         * @param in The input buffer.
-         * @param out The output buffer.
+         * @param src The source buffer.
+         * @param dest The destination buffer.
          * @param perm Permutation of the dimensions.
          * @exception InvalidOperationException
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void Transpose(const Buffer& in, Buffer& out, const buffer_size_t& perm)
+        static void Transpose(const Buffer& src, Buffer& dest, const buffer_size_t& perm)
         {
             if constexpr (NDimensions == 1 || !std::equality_comparable<TData>)
             {
@@ -538,15 +596,14 @@ namespace Heph
             }
             else
             {
-                const bool sameInstance = &in == &out;
-                const bool inPlace = in.flags.Test(BufferFlags::TransposeInPlace);
+                const bool sameInstance = &src == &dest;
+                const bool inPlace = src.flags.Test(BufferFlags::TransposeInPlace);
 
-                // avoid extra copy for in-place transpose.
                 if (sameInstance && !inPlace)
                 {
                     Buffer temp;
-                    Buffer::Transpose(in, temp, perm);
-                    out = std::move(temp);
+                    Buffer::Transpose(src, temp, perm);
+                    dest = std::move(temp);
                     return;
                 }
 
@@ -569,10 +626,10 @@ namespace Heph
 
                 if (!sameInstance)
                 {
-                    Buffer::Reallocate(out.pData, out.ElementCount(), in.ElementCount(), BufferFlags::AllocUninitialized);
-                    out.size = in.size;
-                    out.strides = in.strides;
-                    out.flags = in.flags;
+                    Buffer::Reallocate(dest.pData, dest.ElementCount(), src.ElementCount(), BufferFlags::AllocUninitialized);
+                    dest.size = src.size;
+                    dest.strides = src.strides;
+                    dest.flags = src.flags;
                 }
 
                 if (inPlace)
@@ -584,20 +641,20 @@ namespace Heph
 
                         for (size_t d = 0; d < NDimensions; ++d)
                         {
-                            newSize[d] = in.size[perm[d]];
-                            newStrides[d] = in.strides[perm[d]];
+                            newSize[d] = src.size[perm[d]];
+                            newStrides[d] = src.strides[perm[d]];
                         }
 
-                        out.size = newSize;
-                        out.strides = newStrides;
+                        dest.size = newSize;
+                        dest.strides = newStrides;
                     }
                     else
                     {
-                        (void)std::copy(in.begin(), in.end(), out.begin());
+                        (void)std::copy(src.begin(), src.end(), dest.begin());
                         for (size_t d = 0; d < NDimensions; ++d)
                         {
-                            out.size[d] = in.size[perm[d]];
-                            out.strides[d] = in.strides[perm[d]];
+                            dest.size[d] = src.size[perm[d]];
+                            dest.strides[d] = src.strides[perm[d]];
                         }
                     }
                 }
@@ -605,20 +662,20 @@ namespace Heph
                 {
                     for (size_t d = 0; d < NDimensions; ++d)
                     {
-                        out.size[d] = in.size[perm[d]];
+                        dest.size[d] = src.size[perm[d]];
                     }
-                    out.CalcStrides();
+                    dest.CalcStrides();
 
                     // optimize this later
-                    const const_iterator itEnd = in.cend();
-                    for (const_iterator it = in.cbegin(); it != itEnd; ++it)
+                    const const_iterator itEnd = src.cend();
+                    for (const_iterator it = src.cbegin(); it != itEnd; ++it)
                     {
                         buffer_size_t outputIndices;
                         for (size_t d = 0; d < NDimensions; ++d)
                         {
                             outputIndices[d] = it.Indices()[perm[d]];
                         }
-                        out[outputIndices] = *it;
+                        dest[outputIndices] = *it;
                     }
                 }
             }

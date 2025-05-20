@@ -80,6 +80,18 @@ public:
         return reinterpret_cast<TestBuffer&>(Base::operator=(std::move(rhs)));
     }
 
+    TestBuffer SubBuffer(size_t index, size_t size)
+    {
+        TestBuffer result;
+        Base::SubBuffer(*this, result, index, size);
+        return result;
+    }
+
+    void Cut(size_t index, size_t size)
+    {
+        Base::Cut(*this, index, size);
+    }
+
     void Transpose(auto... perm)
     {
         static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
@@ -87,11 +99,6 @@ public:
 
         const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
         this->Transpose(permArray);
-    }
-
-    void Cut(size_t index, size_t size)
-    {
-        Base::Cut(*this, index, size);
     }
 
     void Transpose(const buffer_size_t& perm)
@@ -226,6 +233,59 @@ TEST(HephTest, Buffer_Reset)
         b.Reset();
         for (const test_data_t& element : b)
             EXPECT_EQ(element, 0);
+    }
+}
+
+TEST(HephTest, Buffer_SubBuffer)
+{
+    {
+        constexpr test_data_t expected0[3] = { 1, 2, 3 };
+        constexpr test_data_t expected1[2] = { 3, 4 };
+        constexpr test_data_t expected2[10] = { 4, 5, 0, 0, 0, 0, 0, 0, 0, 0 };
+        TestBuffer<1> b = { 1, 2, 3, 4, 5 };
+
+        TestBuffer<1> result = b.SubBuffer(0, 3);
+        EXPECT_EQ(result.ElementCount(), 3);
+        for (size_t i = 0; i < result.Size(); ++i)
+            EXPECT_EQ(result[i], expected0[i]);
+
+        result = b.SubBuffer(2, 2);
+        EXPECT_EQ(result.ElementCount(), 2);
+        for (size_t i = 0; i < result.Size(); ++i)
+            EXPECT_EQ(result[i], expected1[i]);
+
+        result = b.SubBuffer(3, 10);
+        EXPECT_EQ(result.ElementCount(), 10);
+        for (size_t i = 0; i < result.Size(); ++i)
+            EXPECT_EQ(result[i], expected2[i]);
+    }
+
+    {
+        constexpr test_data_t expected0[2][3] = { { 1, 2, 3 }, { 4, 5, 6 } };
+        constexpr test_data_t expected1[2][3] = { { 7, 8, 9 }, { 10, 11, 12 } };
+        constexpr test_data_t expected2[10][3] = { {10, 11, 12}, {13, 14, 15}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+        
+        TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+
+        TestBuffer<2> result = b.SubBuffer(0, 2);
+        EXPECT_EQ(result.Size(0), 2);
+        EXPECT_EQ(result.Size(1), 3);
+        EXPECT_EQ(result.ElementCount(), 6);
+        for (size_t i = 0; i < result.Size(0); ++i)
+            for (size_t j = 0; j < result.Size(1); ++j)
+                EXPECT_EQ((result[i, j]), expected0[i][j]);
+
+        result = b.SubBuffer(2, 2);
+        EXPECT_EQ(result.ElementCount(), 6);
+        for (size_t i = 0; i < result.Size(0); ++i)
+            for (size_t j = 0; j < result.Size(1); ++j)
+                EXPECT_EQ((result[i, j]), expected1[i][j]);
+
+        result = b.SubBuffer(3, 10);
+        EXPECT_EQ(result.ElementCount(), 30);
+        for (size_t i = 0; i < result.Size(0); ++i)
+            for (size_t j = 0; j < result.Size(1); ++j)
+                EXPECT_EQ((result[i, j]), expected2[i][j]);
     }
 }
 
