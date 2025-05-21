@@ -470,7 +470,7 @@ namespace Heph
          * @param src The source buffer.
          * @param dest The destination buffer.
          * @param index Index of the first element that will be copied.
-         * @param size Number of elements to copy.
+         * @param size Number of top-level entries to copy.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
@@ -522,7 +522,7 @@ namespace Heph
          *
          * @param buffer The buffer to be cut.
          * @param index Index of the first element that will be removed.
-         * @param size Number of elements to remove.
+         * @param size Number of top-level entries to remove.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
@@ -574,6 +574,47 @@ namespace Heph
 
             buffer.size = newSize;
             buffer.CalcStrides();
+        }
+
+        /**
+         * Replaces a section of the buffer.
+         *
+         * @note This method does not allocate extra memory, just replaces the existing elements.
+         *
+         * @param b1 Buffer whose elements will be replaced.
+         * @param b2 Buffer providing the replacement elements.
+         * @param b1Index Starting index in b1 where replacement begins.
+         * @param b2Index Starting index in b2 from which elements are copied.
+         * @param size Number of top-level entries to replace.
+         * @exception InvalidArgumentException
+         */
+        static void Replace(Buffer& b1, const Buffer& b2, size_t b1Index, size_t b2Index, size_t size)
+        {
+            if (b1Index >= b1.Size(0) || b2Index >= b2.Size(0))
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
+            }
+
+            if ((b1Index + size) > b1.Size(0) || (b2Index + size) > b2.Size(0))
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid size.");
+            }
+
+            if (b1.IsEmpty() || b2.IsEmpty())
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Buffer cannot be empty.");
+            }
+
+            iterator itB1Begin = b1.begin();
+            itB1Begin.IncrementIndex(0, b1Index);
+
+            const_iterator itB2Begin = b2.begin();
+            itB2Begin.IncrementIndex(0, b2Index);
+
+            const_iterator itB2End = itB2Begin;
+            itB2End.IncrementIndex(0, size);
+
+            (void)std::copy(itB2Begin, itB2End, itB1Begin);
         }
 
         /**

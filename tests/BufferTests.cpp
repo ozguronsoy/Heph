@@ -92,6 +92,11 @@ public:
         Base::Cut(*this, index, size);
     }
 
+    void Replace(const TestBuffer& b, size_t index, size_t bIndex, size_t size)
+    {
+        Base::Replace(*this, b, index, bIndex, size);
+    }
+
     void Transpose(auto... perm)
     {
         static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
@@ -264,7 +269,7 @@ TEST(HephTest, Buffer_SubBuffer)
         constexpr test_data_t expected0[2][3] = { { 1, 2, 3 }, { 4, 5, 6 } };
         constexpr test_data_t expected1[2][3] = { { 7, 8, 9 }, { 10, 11, 12 } };
         constexpr test_data_t expected2[10][3] = { {10, 11, 12}, {13, 14, 15}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
-        
+
         TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
 
         TestBuffer<2> result = b.SubBuffer(0, 2);
@@ -380,6 +385,56 @@ TEST(HephTest, Buffer_Cut)
         b.Cut(0, 100);
         EXPECT_EQ(b.ElementCount(), 0);
         EXPECT_TRUE(b.IsEmpty());
+    }
+}
+
+TEST(HephTest, Buffer_Replace)
+{
+    {
+        constexpr test_data_t expected0[7] = { 1, 2, 3, 4, 8, 9, 10 };
+        constexpr test_data_t expected1[7] = { 1, 9, 10, 4, 5, 6, 7 };
+        TestBuffer<1> b0 = { 1, 2, 3, 4, 5, 6, 7 };
+        TestBuffer<1> b1 = b0;
+        TestBuffer<1> b2 = { 8, 9, 10 };
+
+        EXPECT_THROW(b1.Replace(b2, 0, 0, 4), InvalidArgumentException);
+        EXPECT_THROW(b1.Replace(b2, 7, 0, 3), InvalidArgumentException);
+        EXPECT_THROW(b1.Replace(b2, 0, 3, 0), InvalidArgumentException);
+        EXPECT_THROW(b1.Replace(b2, 0, 1, 3), InvalidArgumentException);
+
+        b1.Replace(b2, 4, 0, 3);
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected0[i]);
+        b1 = b0;
+
+        b1.Replace(b2, 1, 1, 2);
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected1[i]);
+    }
+
+    {
+        constexpr test_data_t expected0[5][3] = { {1, 2, 3}, {4, 5, 6}, {16, 17, 18}, {19, 20, 21}, {22, 23, 24} };
+        constexpr test_data_t expected1[5][3] = { {19, 20, 21}, {22, 23, 24}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+        TestBuffer<2> b0 = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+        TestBuffer<2> b1 = b0;
+        TestBuffer<2> b2 = { {16, 17, 18}, {19, 20, 21}, {22, 23, 24} };
+
+        EXPECT_THROW(b1.Replace(b2, 0, 0, 4), InvalidArgumentException);
+        EXPECT_THROW(b1.Replace(b2, 5, 0, 3), InvalidArgumentException);
+        EXPECT_THROW(b1.Replace(b2, 0, 3, 0), InvalidArgumentException);
+        EXPECT_THROW(b1.Replace(b2, 0, 1, 3), InvalidArgumentException);
+
+        b1.Replace(b2, 2, 0, 3);
+        for (size_t i = 0; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b1.Size(1); ++j)
+                EXPECT_EQ((b1[i, j]), expected0[i][j]);
+        b1 = b0;
+
+        b1.Replace(b2, 0, 1, 2);
+        for (size_t i = 0; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b1.Size(1); ++j)
+                EXPECT_EQ((b1[i, j]), expected1[i][j]);
+        b1 = b0;
     }
 }
 
