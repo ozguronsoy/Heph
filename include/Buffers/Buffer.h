@@ -35,9 +35,13 @@ namespace Heph
         using const_iterator = BufferIterator<const TData, NDimensions>;
         /** @copybrief iterator::buffer_size_t */
         using buffer_size_t = iterator::buffer_size_t;
+        /** @copybrief iterator::buffer_index_t */
+        using buffer_index_t = iterator::buffer_index_t;
 
         /** @copybrief iterator::BUFFER_SIZE_ZERO */
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
+        /** @copybrief iterator::BUFFER_INDEX_ZERO */
+        static constexpr buffer_index_t BUFFER_INDEX_ZERO = iterator::BUFFER_INDEX_ZERO;
 
     protected:
         /** Pointer to the first element of the buffer, or nullptr if the buffer is empty. */
@@ -182,13 +186,13 @@ namespace Heph
         TData& operator[](auto... indices)
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
-            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+            static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
+            return iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc operator[] */
-        TData& operator[](const buffer_size_t& indices)
+        TData& operator[](const buffer_index_t& indices)
         {
             return iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, indices);
         }
@@ -197,13 +201,13 @@ namespace Heph
         const TData& operator[](auto... indices) const
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
-            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+            static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return const_iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
+            return const_iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc operator[] */
-        const TData& operator[](const buffer_size_t& indices) const
+        const TData& operator[](const buffer_index_t& indices) const
         {
             return const_iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, indices);
         }
@@ -278,13 +282,13 @@ namespace Heph
         TData& At(auto... indices)
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
-            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+            static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
+            return iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc At */
-        TData& At(const buffer_size_t& indices)
+        TData& At(const buffer_index_t& indices)
         {
             return iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, indices);
         }
@@ -293,13 +297,13 @@ namespace Heph
         const TData& At(auto... indices) const
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
-            static_assert((std::is_convertible_v<decltype(indices), size_t> && ...), "Invalid type for indices parameters, must be convertible to size_t.");
+            static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return const_iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, std::forward<size_t>(static_cast<size_t>(indices))...);
+            return const_iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc At */
-        const TData& At(const buffer_size_t& indices) const
+        const TData& At(const buffer_index_t& indices) const
         {
             return const_iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, indices);
         }
@@ -620,6 +624,7 @@ namespace Heph
          * @param b2Index Starting index in b2 from which top-level entries are copied.
          * @param size Number of top-level entries to replace.
          * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
          */
         static void Replace(Buffer& b1, const Buffer& b2, size_t b1Index, size_t b2Index, size_t size)
         {
@@ -747,7 +752,7 @@ namespace Heph
                     const const_iterator itEnd = src.cend();
                     for (const_iterator it = src.cbegin(); it != itEnd; ++it)
                     {
-                        buffer_size_t outputIndices;
+                        buffer_index_t outputIndices = BUFFER_INDEX_ZERO;
                         for (size_t d = 0; d < NDimensions; ++d)
                         {
                             outputIndices[d] = it.Indices()[perm[d]];
@@ -788,7 +793,7 @@ namespace Heph
                     iterator itEnd = temp.end();
                     for (; it < itEnd; ++it)
                     {
-                        const buffer_size_t indices = it.Indices();
+                        const buffer_index_t indices = it.Indices();
                         if (std::ranges::equal(indices, buffer.size, std::less()))
                             *it = buffer[indices];
                         else
@@ -833,7 +838,7 @@ namespace Heph
                 const iterator itEnd = buffer.end();
                 for (iterator it = buffer.begin(); it < itEnd; ++it)
                 {
-                    buffer_size_t secondElementIndices = it.Indices();
+                    buffer_index_t secondElementIndices = it.Indices();
                     secondElementIndices[dim] = dimSize - secondElementIndices[dim] - 1;
 
                     std::swap(*it, buffer[secondElementIndices]);
