@@ -87,6 +87,11 @@ public:
         return result;
     }
 
+    void Append(const TestBuffer& b)
+    {
+        Base::Append(*this, b);
+    }
+
     void Cut(size_t index, size_t size)
     {
         Base::Cut(*this, index, size);
@@ -294,6 +299,69 @@ TEST(HephTest, Buffer_SubBuffer)
     }
 }
 
+TEST(HephTest, Buffer_Append)
+{
+    {
+        TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
+        TestBuffer<1> b2 = { 8, 9, 10 };
+
+        b1.Append(b2);
+        EXPECT_EQ(b1.Size(), 10);
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], i + 1);
+    }
+
+    {
+        TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
+        TestBuffer<1> b2 = {};
+
+        b1.Append(b2);
+        EXPECT_EQ(b1.Size(), 7);
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], i + 1);
+    }
+
+    {
+        TestBuffer<1> b1 = {};
+        TestBuffer<1> b2 = { 8, 9, 10 };
+
+        b1.Append(b2);
+        EXPECT_EQ(b1.Size(), 3);
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], i + 8);
+    }
+
+    {
+        constexpr test_data_t expected[6] = { 1, 2, 3, 1, 2, 3 };
+        TestBuffer<1> b = { 1, 2, 3 };
+
+        EXPECT_NO_THROW(b.Append(b));
+        EXPECT_EQ(b.Size(), 6);
+        for (size_t i = 0; i < b.Size(); ++i)
+            EXPECT_EQ(b[i], expected[i]);
+    }
+
+    {
+        TestBuffer<1> b;
+        EXPECT_NO_THROW(b.Append(b));
+        EXPECT_TRUE(b.IsEmpty());
+    }
+
+    {
+        TestBuffer<2> b1 = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15}, {16, 17, 18}, {19, 20, 21} };
+        TestBuffer<2> b2 = { {22, 23, 24}, {25, 26, 27}, {28, 29, 30} };
+        const size_t expected_element_count = b1.ElementCount() + b2.ElementCount();
+
+        b1.Append(b2);
+        EXPECT_EQ(b1.Size(0), 10);
+        EXPECT_EQ(b1.Size(1), 3);
+        EXPECT_EQ(b1.ElementCount(), expected_element_count);
+        for (size_t i = 0, k = 1; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b2.Size(1); ++j, ++k)
+                EXPECT_EQ((b1[i, j]), k);
+    }
+}
+
 TEST(HephTest, Buffer_Cut)
 {
     {
@@ -393,6 +461,8 @@ TEST(HephTest, Buffer_Replace)
     {
         constexpr test_data_t expected0[7] = { 1, 2, 3, 4, 8, 9, 10 };
         constexpr test_data_t expected1[7] = { 1, 9, 10, 4, 5, 6, 7 };
+        constexpr test_data_t expected2[7] = { 3, 4, 5, 6, 5, 6, 7 };
+        constexpr test_data_t expected3[7] = { 1, 2, 1, 2, 3, 4, 7 };
         TestBuffer<1> b0 = { 1, 2, 3, 4, 5, 6, 7 };
         TestBuffer<1> b1 = b0;
         TestBuffer<1> b2 = { 8, 9, 10 };
@@ -410,6 +480,16 @@ TEST(HephTest, Buffer_Replace)
         b1.Replace(b2, 1, 1, 2);
         for (size_t i = 0; i < b1.Size(); ++i)
             EXPECT_EQ(b1[i], expected1[i]);
+
+        b1 = b0;
+        EXPECT_NO_THROW(b1.Replace(b1, 0, 2, 4));
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected2[i]);
+
+        b1 = b0;
+        EXPECT_NO_THROW(b1.Replace(b1, 2, 0, 4));
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected3[i]);
     }
 
     {

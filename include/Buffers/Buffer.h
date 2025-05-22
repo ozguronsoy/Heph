@@ -465,11 +465,11 @@ namespace Heph
         /**
          * Copies a section of the buffer.
          *
-         * @important This method allocates memory for the destination buffer, hence no need to allocate in advance.
+         * @note This method allocates memory for the destination buffer, hence no need to allocate in advance.
          *
-         * @param src The source buffer.
-         * @param dest The destination buffer.
-         * @param index Index of the first element that will be copied.
+         * @param src The buffer whose elements will be copied to the destination.
+         * @param dest The buffer which elements will be coppied to.
+         * @param index Index of the first top-level entry that will be copied.
          * @param size Number of top-level entries to copy.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
@@ -518,10 +518,44 @@ namespace Heph
         }
 
         /**
+         * Appends the elements of the source buffer to the destination buffer.
+         *
+         * @note For multidimensional buffers, all dimensions except the first must have the same size in both buffers.
+         *
+         * @param dest The buffer to which elements will be appended.
+         * @param src The buffer whose elements will be appended to the destination.
+         * @exception InvalidOperationException
+         * @exception InsufficientMemoryException
+         */
+        static void Append(Buffer& dest, const Buffer& src)
+        {
+            if (src.IsEmpty()) return;
+            if (dest.IsEmpty())
+            {
+                dest = src;
+                return;
+            }
+
+            if constexpr (NDimensions > 1)
+            {
+                if (!std::equal(dest.size.cbegin() + 1, dest.size.cend(), src.size.cbegin() + 1))
+                {
+                    HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "All dimensions except the first must have the same size in both buffers.");
+                }
+            }
+
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+            (void)std::copy(src.begin(), src.end(), dest.end()); // dest size is not updated yet
+
+            if constexpr (NDimensions == 1) dest.size += src.size;
+            else dest.size[0] += src.size[0];
+        }
+
+        /**
          * Removes a section of the buffer.
          *
          * @param buffer The buffer to be cut.
-         * @param index Index of the first element that will be removed.
+         * @param index Index of the first top-level entry that will be removed.
          * @param size Number of top-level entries to remove.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
@@ -569,8 +603,7 @@ namespace Heph
                 (void)std::copy(itBuffer, buffer.cend(), itTemp);
             }
 
-            buffer.pData = temp.pData;
-            temp.pData = nullptr;
+            std::swap(buffer.pData, temp.pData);
 
             buffer.size = newSize;
             buffer.CalcStrides();
@@ -584,7 +617,7 @@ namespace Heph
          * @param b1 Buffer whose elements will be replaced.
          * @param b2 Buffer providing the replacement elements.
          * @param b1Index Starting index in b1 where replacement begins.
-         * @param b2Index Starting index in b2 from which elements are copied.
+         * @param b2Index Starting index in b2 from which top-level entries are copied.
          * @param size Number of top-level entries to replace.
          * @exception InvalidArgumentException
          */
@@ -600,9 +633,12 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid size.");
             }
 
-            if (b1.IsEmpty() || b2.IsEmpty())
+            if (&b1 == &b2)
             {
-                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Buffer cannot be empty.");
+                Buffer temp = b2;
+                Buffer::Replace(temp, b2, b1Index, b2Index, size);
+                std::swap(b1.pData, temp.pData);
+                return;
             }
 
             iterator itB1Begin = b1.begin();
@@ -620,7 +656,7 @@ namespace Heph
         /**
          * Transposes a multidimensional buffer.
          *
-         * @important This method allocates memory for the destination buffer, hence no need to allocate in advance.
+         * @note This method allocates memory for the destination buffer, hence no need to allocate in advance.
          *
          * @param src The source buffer.
          * @param dest The destination buffer.
@@ -759,8 +795,7 @@ namespace Heph
                             *it = TData();
                     }
 
-                    buffer.pData = temp.pData;
-                    temp.pData = nullptr;
+                    std::swap(buffer.pData, temp.pData);
                 }
 
                 buffer.size = newSize;
