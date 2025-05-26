@@ -478,9 +478,9 @@ namespace Heph
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void SubBuffer(const Buffer& src, Buffer& dest, size_t index, size_t size)
+        static void SubBuffer(const Buffer& src, Buffer& dest, index_t index, size_t size)
         {
-            if (index >= src.Size(0))
+            if (index < 0 || index >= src.Size(0))
             {
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
             }
@@ -564,9 +564,9 @@ namespace Heph
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void Cut(Buffer& buffer, size_t index, size_t size)
+        static void Cut(Buffer& buffer, index_t index, size_t size)
         {
-            if (index >= buffer.Size(0))
+            if (index < 0 || index >= buffer.Size(0))
             {
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
             }
@@ -626,9 +626,9 @@ namespace Heph
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void Replace(Buffer& b1, const Buffer& b2, size_t b1Index, size_t b2Index, size_t size)
+        static void Replace(Buffer& b1, const Buffer& b2, index_t b1Index, index_t b2Index, size_t size)
         {
-            if (b1Index >= b1.Size(0) || b2Index >= b2.Size(0))
+            if ((b1Index < 0 || b1Index >= b1.Size(0)) || (b2Index < 0 || b2Index >= b2.Size(0)))
             {
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
             }

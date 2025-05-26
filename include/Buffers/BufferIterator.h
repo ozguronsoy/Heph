@@ -256,35 +256,49 @@ namespace Heph
         template<bool CheckErrors>
         static reference Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
         {
+            const bool isCircular = flags.Test(BufferFlags::Circular);
+
             if constexpr (NDimensions == 1)
             {
-                if constexpr (CheckErrors)
+                if (isCircular)
                 {
-                    if (indices >= size)
-                    {
-                        HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
-                    }
+                    return ptr[indices % size];
                 }
-
-                return flags.Test(BufferFlags::Circular) ? (ptr[indices % size]) : (ptr[indices]);
-            }
-            else
-            {
-                index_t n = 0;
-                for (size_t i = 0; i < NDimensions; ++i)
+                else
                 {
                     if constexpr (CheckErrors)
                     {
-                        if (indices[i] >= size[i])
+                        if (indices < 0 || indices >= size)
                         {
                             HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
                         }
                     }
-
-                    n +=
-                        flags.Test(BufferFlags::Circular)
-                        ? ((indices[i] % size[i]) * strides[i])
-                        : (indices[i] * strides[i]);
+                    return ptr[indices];
+                }
+            }
+            else
+            {
+                index_t n = 0;
+                if (isCircular)
+                {
+                    for (size_t i = 0; i < NDimensions; ++i)
+                    {
+                        n += (indices[i] % size[i]) * strides[i];
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < NDimensions; ++i)
+                    {
+                        if constexpr (CheckErrors)
+                        {
+                            if (indices[i] < 0 || indices[i] >= size[i])
+                            {
+                                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
+                            }
+                        }
+                        n += indices[i] * strides[i];
+                    }
                 }
                 return ptr[n];
             }

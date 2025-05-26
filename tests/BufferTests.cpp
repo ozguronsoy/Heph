@@ -62,7 +62,7 @@ public:
                     }
 
                     (void)std::copy(il.begin(), il.end(), it);
-                    it += { 0, s1 };
+                    it += s1;
                 }
             }
         }
