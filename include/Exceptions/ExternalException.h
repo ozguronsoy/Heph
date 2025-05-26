@@ -12,18 +12,18 @@ namespace Heph
 	class HEPH_API ExternalException : public Exception
 	{
 	private:
-		/** Name of the external source that caused the exception. */
+		/** @brief Name of the external source that caused the exception. */
 		std::string externalSource;
 
-		/** Description of the exception provided by the external source. */
+		/** @brief Description of the exception provided by the external source. */
 		std::string externalMessage;
 
 	public:
 		/**
 		 * @copydoc Exception(const std::string&,const std::string&)
 		 *
-		 * @param externalSource @copydetails externalSource
-		 * @param externalMessage @copydetails externalMessage
+		 * @param externalSource @copybrief externalSource
+		 * @param externalMessage @copybrief externalMessage
 		 */
 		ExternalException(const std::string& method, const std::string& message, const std::string& externalSource, const std::string& externalMessage);
 

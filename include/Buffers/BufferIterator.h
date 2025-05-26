@@ -55,28 +55,48 @@ namespace Heph
         static constexpr buffer_index_t BUFFER_INDEX_ZERO = {};
 
     private:
+        /** @brief Pointer to pointer to the first element of the buffer. */
         pointer* ppData;
+        /** @brief Pointer to the buffer flags. */
         Enum<BufferFlags> const* pFlags;
+        /** @brief Pointer to the buffer size. */
         buffer_size_t const* pSize;
+        /** @brief Pointer to the buffer strides. */
         buffer_size_t const* pStrides;
+        /** @brief Current position of the iterator. */
         buffer_index_t indices;
 
     public:
+        /**
+         * @copydoc constructor
+         *
+         * @param ptr Pointer to the first element of the buffer.
+         * @param flags Buffer flags.
+         * @param size Buffer size.
+         * @param strides Buffer strides.
+         */
         BufferIterator(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides)
             : ppData(&ptr), pFlags(&flags), pSize(&size), pStrides(&strides), indices(BUFFER_INDEX_ZERO)
         {
         }
 
+        /** Gets the element referenced by the iterator. */
         reference operator*()
         {
             return BufferIterator::Get<false>(*this->ppData, *this->pFlags, *this->pSize, *this->pStrides, this->indices);
         }
 
+        /** Provides pointer-like access to the element referenced by the iterator. */
         pointer operator->()
         {
             return &this->operator*();
         }
 
+        /**
+         * Returns a new advanced iterator.
+         *
+         * @param i The value to add to the last dimension.
+         */
         BufferIterator operator+(index_t i) const
         {
             BufferIterator result = *this;
@@ -84,6 +104,11 @@ namespace Heph
             return result;
         }
 
+        /**
+         * Returns a new advanced iterator.
+         *
+         * @param rhs The value to add.
+         */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         typename std::enable_if_t<(NDim > 1), BufferIterator> operator+(const buffer_index_t& rhs) const
@@ -93,6 +118,11 @@ namespace Heph
             return result;
         }
 
+        /**
+         * Moves the last dimension of the iterator forward.
+         *
+         * @param i The value to add to the last dimension.
+         */
         BufferIterator& operator+=(index_t i)
         {
             this->IncrementIndex(NDimensions - 1, i);
@@ -100,6 +130,11 @@ namespace Heph
             return *this;
         }
 
+        /**
+         * Moves the iterator forward.
+         *
+         * @param rhs The value to add to the current index.
+         */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         typename std::enable_if_t<(NDim > 1), BufferIterator&> operator+=(const buffer_index_t& rhs)
@@ -112,6 +147,11 @@ namespace Heph
             return *this;
         }
 
+        /**
+         * Returns a new moved back iterator.
+         *
+         * @param i The value to subtract from the last dimension.
+         */
         BufferIterator operator-(index_t i) const
         {
             BufferIterator result = *this;
@@ -119,6 +159,11 @@ namespace Heph
             return result;
         }
 
+        /**
+         * Returns a new moved back iterator.
+         *
+         * @param rhs The value to subtract.
+         */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         typename std::enable_if_t<(NDim > 1), BufferIterator> operator-(const buffer_index_t& rhs) const
@@ -128,12 +173,22 @@ namespace Heph
             return result;
         }
 
+        /**
+         * Moves the last dimension of the iterator backwards.
+         *
+         * @param i The value to subtract from the last dimension.
+         */
         BufferIterator& operator-=(index_t i)
         {
             this->DecrementIndex(NDimensions - 1, i);
             return *this;
         }
 
+        /**
+         * Moves the iterator backwards.
+         *
+         * @param rhs The value to subtract.
+         */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         typename std::enable_if_t<(NDim > 1), BufferIterator&> operator-=(const buffer_index_t& rhs)
@@ -146,6 +201,7 @@ namespace Heph
             return *this;
         }
 
+        /** Moves the iterator forward by one. */
         BufferIterator& operator++()
         {
             if constexpr (NDimensions == 1) this->indices++;
@@ -154,6 +210,7 @@ namespace Heph
             return *this;
         }
 
+        /** @copydoc operator++ */
         BufferIterator& operator++(int)
         {
             BufferIterator temp = *this;
@@ -161,7 +218,7 @@ namespace Heph
             return temp;
         }
 
-
+        /** Moves the iterator backwards by one. */
         BufferIterator& operator--()
         {
             if constexpr (NDimensions == 1) this->indices--;
@@ -170,6 +227,7 @@ namespace Heph
             return *this;
         }
 
+        /** @copydoc operator-- */
         BufferIterator& operator--(int)
         {
             BufferIterator temp = *this;
@@ -177,6 +235,7 @@ namespace Heph
             return temp;
         }
 
+        /** Compares the current iterator with another for ordering based on indices. */
         auto operator<=>(const BufferIterator& rhs) const
         {
             if (this->indices == rhs.indices)
@@ -200,16 +259,24 @@ namespace Heph
             return std::weak_ordering::less;
         }
 
+        /** Checks whether both iterators belong to same buffer and at the same position. */
         bool operator==(const BufferIterator& rhs) const
         {
             return this->ppData == rhs.ppData && this->indices == rhs.indices;
         }
 
+        /** Gets the current indices. */
         const buffer_index_t& Indices() const
         {
             return this->indices;
         }
 
+        /**
+         * Moves the provided dimension of the iterator forward.
+         * 
+         * @param dim Dimension to move.
+         * @param n The value to add.
+         */
         void IncrementIndex(size_t dim, index_t n = 1)
         {
             if constexpr (NDimensions == 1) this->indices += n;
@@ -226,6 +293,12 @@ namespace Heph
             }
         }
 
+        /**
+         * Moves the provided dimension of the iterator backwards.
+         * 
+         * @param dim Dimension to move.
+         * @param n The value to subtract.
+         */
         void DecrementIndex(size_t dim, index_t n = 1)
         {
             if constexpr (NDimensions == 1) this->indices -= n;
@@ -242,6 +315,16 @@ namespace Heph
             }
         }
 
+        /**
+         * Gets a reference to the element at the provided indices.
+         * 
+         * @tparam CheckErrors Determines whether to validate indices.
+         * @tparam NDim Number of dimensions for SFINAE, must be equal to ``NDimensions``.
+         * @param ptr Pointer to the first element of the buffer.
+         * @param flags Buffer flags.
+         * @param size Buffer size.
+         * @param strides Buffer strides.
+         */
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
         static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
@@ -253,6 +336,15 @@ namespace Heph
             return BufferIterator::Get<CheckErrors>(ptr, flags, size, strides, indicesArray);
         }
 
+        /**
+         * Gets a reference to the element at the provided indices.
+         * 
+         * @tparam CheckErrors Determines whether to validate indices.
+         * @param ptr Pointer to the first element of the buffer.
+         * @param flags Buffer flags.
+         * @param size Buffer size.
+         * @param strides Buffer strides.
+         */
         template<bool CheckErrors>
         static reference Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
         {

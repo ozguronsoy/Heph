@@ -44,24 +44,24 @@ namespace Heph
         static constexpr buffer_index_t BUFFER_INDEX_ZERO = iterator::BUFFER_INDEX_ZERO;
 
     protected:
-        /** Pointer to the first element of the buffer, or nullptr if the buffer is empty. */
+        /** @brief Pointer to the first element of the buffer, or nullptr if the buffer is empty. */
         TData* pData;
 
-        /** Number of elements in each dimension the buffer stores. */
+        /** @brief Number of elements in each dimension the buffer stores. */
         buffer_size_t size;
 
-        /** Number of elements to advance in one step for each dimension. */
+        /** @brief Number of elements to advance in one step for each dimension. */
         buffer_size_t strides;
 
-        /** Specifies the configuration flags for the buffer. */
+        /** @brief Specifies the configuration flags for the buffer. */
         Enum<BufferFlags> flags;
 
     public:
         /**
          * @copydoc constructor
          *
-         * @param flags @copydetails flags
-         * @param size @copydetails size
+         * @param flags @copybrief flags
+         * @param size @copybrief size
          * @exception InsufficientMemoryException
          */
         explicit Buffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size)
@@ -88,8 +88,8 @@ namespace Heph
         /**
          * @copydoc constructor
          *
-         * @param flags @copydetails flags
-         * @param size @copydetails size
+         * @param flags @copybrief flags
+         * @param size @copybrief size
          * @exception InsufficientMemoryException
          */
         explicit Buffer(Enum<BufferFlags> flags, const buffer_size_t& size)
@@ -384,7 +384,7 @@ namespace Heph
         /**
          * @copydoc ElementCount
          *
-         * @param size @copydetails size
+         * @param size @copybrief size
          */
         static inline size_t ElementCount(const buffer_size_t& size)
         {
@@ -396,7 +396,7 @@ namespace Heph
          * Allocates memory.
          *
          * @param elementCount Number of elements to allocate.
-         * @param flags @copydetails flags
+         * @param flags @copybrief flags
          * @return Pointer to the allocated memory.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
@@ -434,7 +434,7 @@ namespace Heph
          * @param pData Pointer to the data that will be reallocated.
          * @param oldElementCount Old number of elements.
          * @param newElementCount New number of elements.
-         * @param flags @copydetails flags
+         * @param flags @copybrief flags
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
