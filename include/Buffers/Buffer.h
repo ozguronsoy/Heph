@@ -353,16 +353,19 @@ namespace Heph
             return this->begin();
         }
 
+        /** Returns a reverse iterator to the beginning. */
         reverse_iterator rbegin()
         {
             return std::make_reverse_iterator(this->end());
         }
 
+        /** @copydoc rbegin */
         const_reverse_iterator rbegin() const
         {
             return std::make_reverse_iterator(this->end());
         }
 
+        /** @copydoc rbegin */
         const_reverse_iterator crbegin() const
         {
             return std::make_reverse_iterator(this->cend());
@@ -386,16 +389,19 @@ namespace Heph
             return this->end();
         }
 
+        /** Returns a reverse iterator to the end. */
         reverse_iterator rend()
         {
             return std::make_reverse_iterator(this->begin());
         }
 
+        /** @copydoc rend */
         const_reverse_iterator rend() const
         {
             return std::make_reverse_iterator(this->begin());
         }
 
+        /** @copydoc rend */
         const_reverse_iterator crend() const
         {
             return std::make_reverse_iterator(this->cbegin());
@@ -652,6 +658,16 @@ namespace Heph
             }
 
             Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+
+            if (&dest == &src)
+            {
+                (void)std::copy(dest.begin(), dest.end(), dest.end());
+
+                if constexpr (NDimensions == 1) dest.size += src.size;
+                else dest.size[0] += src.size[0];
+
+                return;
+            }
 
             if constexpr (NDimensions == 1) dest.size += src.size;
             else dest.size[0] += src.size[0];
