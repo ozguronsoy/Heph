@@ -99,6 +99,11 @@ public:
         return result;
     }
 
+    void Prepend(const TestBuffer& b)
+    {
+        Base::Prepend(*this, b);
+    }
+
     void Append(const TestBuffer& b)
     {
         Base::Append(*this, b);
@@ -408,6 +413,21 @@ TEST(HephTest, Buffer_SubBuffer)
         for (size_t i = 0; i < result.Size(0); ++i)
             for (size_t j = 0; j < result.Size(1); ++j)
                 EXPECT_EQ((result[i, j]), expected2[i][j]);
+    }
+}
+
+TEST(HephTest, Buffer_Prepend)
+{
+    {
+        constexpr test_data_t expected[10] = { 8, 9, 10, 1, 2, 3, 4, 5, 6, 7 };
+        TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
+        TestBuffer<1> b2 = { 8, 9, 10 };
+
+        b1.Prepend(b2);
+        EXPECT_EQ(b1.Size(), 10);
+
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected[i]);
     }
 }
 

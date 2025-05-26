@@ -33,6 +33,10 @@ namespace Heph
         using iterator = BufferIterator<TData, NDimensions>;
         /** @brief Type of the constant iterator used by the Buffer. */
         using const_iterator = BufferIterator<const TData, NDimensions>;
+        /** @brief Type of the reverse iterator used by the Buffer. */
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        /** @brief Type of the constant reverse iterator used by the Buffer. */
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         /** @copybrief iterator::buffer_size_t */
         using buffer_size_t = iterator::buffer_size_t;
         /** @copybrief iterator::buffer_index_t */
@@ -349,6 +353,21 @@ namespace Heph
             return this->begin();
         }
 
+        reverse_iterator rbegin()
+        {
+            return std::make_reverse_iterator(this->end());
+        }
+
+        const_reverse_iterator rbegin() const
+        {
+            return std::make_reverse_iterator(this->end());
+        }
+
+        const_reverse_iterator crbegin() const
+        {
+            return std::make_reverse_iterator(this->cend());
+        }
+
         /** Returns an iterator to the end. */
         iterator end()
         {
@@ -365,6 +384,21 @@ namespace Heph
         const_iterator cend() const
         {
             return this->end();
+        }
+
+        reverse_iterator rend()
+        {
+            return std::make_reverse_iterator(this->begin());
+        }
+
+        const_reverse_iterator rend() const
+        {
+            return std::make_reverse_iterator(this->begin());
+        }
+
+        const_reverse_iterator crend() const
+        {
+            return std::make_reverse_iterator(this->cbegin());
         }
 
     protected:
@@ -474,6 +508,7 @@ namespace Heph
          *
          * @param buffer Buffer that will be shifted.
          * @param n Number of top-level entries to shift.
+         * @exception InvalidOperationException
          */
         static void ShiftLeft(Buffer& buffer, size_t n)
         {
@@ -492,10 +527,12 @@ namespace Heph
             iterator itBegin = buffer.begin();
             itBegin.IncrementIndex(0, n);
 
-            (void)std::copy(itBegin, buffer.end(), buffer.begin());
+            (void)std::move(itBegin, buffer.end(), buffer.begin());
 
             // set the invalid entries at the end to default value
-            itBegin.IncrementIndex(0, buffer.Size(0) - 2 * n);
+            itBegin = buffer.end();
+            itBegin.DecrementIndex(0, n);
+
             std::fill(itBegin, buffer.end(), TData());
         }
 
@@ -507,6 +544,7 @@ namespace Heph
          *
          * @param buffer Buffer that will be shifted.
          * @param n Number of top-level entries to shift.
+         * @exception InvalidOperationException
          */
         static void ShiftRight(Buffer& buffer, size_t n)
         {
@@ -525,10 +563,10 @@ namespace Heph
             iterator itSrcEnd = buffer.end();
             itSrcEnd.DecrementIndex(0, n);
 
+            (void)std::move_backward(buffer.begin(), itSrcEnd, buffer.end());
+
             iterator itDestBegin = buffer.begin();
             itDestBegin.IncrementIndex(0, n);
-
-            (void)std::copy(buffer.begin(), itSrcEnd, itDestBegin);
 
             std::fill(buffer.begin(), itDestBegin, TData());
         }
@@ -586,6 +624,40 @@ namespace Heph
 
                 (void)std::copy(itSrcStart, itSrcEnd, dest.begin());
             }
+        }
+
+        /**
+         * Prepends the elements of the source buffer to the destination buffer.
+         *
+         * @param dest The buffer to which elements will be prepended.
+         * @param src The buffer whose elements will be prepended to the destination.
+         * @exception InvalidOperationException
+         * @exception InsufficientMemoryException
+         */
+        static void Prepend(Buffer& dest, const Buffer& src)
+        {
+            if (src.IsEmpty()) return;
+            if (dest.IsEmpty())
+            {
+                dest = src;
+                return;
+            }
+
+            if constexpr (NDimensions > 1)
+            {
+                if (!std::equal(dest.size.cbegin() + 1, dest.size.cend(), src.size.cbegin() + 1))
+                {
+                    HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "All dimensions except the first must have the same size in both buffers.");
+                }
+            }
+
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+
+            if constexpr (NDimensions == 1) dest.size += src.size;
+            else dest.size[0] += src.size[0];
+
+            Buffer::ShiftRight(dest, src.Size(0));
+            (void)std::copy(src.begin(), src.end(), dest.begin());
         }
 
         /**
@@ -663,7 +735,7 @@ namespace Heph
             itBuffer.IncrementIndex(0, index);
 
             if (index > 0)
-                (void)std::copy(buffer.cbegin(), itBuffer, temp.begin());
+                (void)std::move(buffer.cbegin(), itBuffer, temp.begin());
 
             if (index + size < buffer.Size(0))
             {
@@ -671,7 +743,7 @@ namespace Heph
                 itTemp.IncrementIndex(0, index);
                 itBuffer.IncrementIndex(0, size);
 
-                (void)std::copy(itBuffer, buffer.cend(), itTemp);
+                (void)std::move(itBuffer, buffer.cend(), itTemp);
             }
 
             std::swap(buffer.pData, temp.pData);
@@ -799,7 +871,7 @@ namespace Heph
                     }
                     else
                     {
-                        (void)std::copy(src.begin(), src.end(), dest.begin());
+                        (void)std::move(src.begin(), src.end(), dest.begin());
                         for (size_t d = 0; d < NDimensions; ++d)
                         {
                             dest.size[d] = src.size[perm[d]];

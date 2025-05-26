@@ -273,7 +273,7 @@ namespace Heph
 
         /**
          * Moves the provided dimension of the iterator forward.
-         * 
+         *
          * @param dim Dimension to move.
          * @param n The value to add.
          */
@@ -295,7 +295,7 @@ namespace Heph
 
         /**
          * Moves the provided dimension of the iterator backwards.
-         * 
+         *
          * @param dim Dimension to move.
          * @param n The value to subtract.
          */
@@ -308,8 +308,12 @@ namespace Heph
 
                 if (this->indices[dim] < 0)
                 {
-                    this->indices[dim] += (*this->pSize)[dim];
-                    n = ((-this->indices[dim]) % (*this->pSize)[dim]) + 1;
+                    n = ((-this->indices[dim]) / (*this->pSize)[dim]) + 1;
+
+                    // positive mod
+                    const index_t s = (*this->pSize)[dim];
+                    this->indices[dim] = (this->indices[dim] % s + s) % s;
+
                     this->DecrementIndex(dim - 1, n);
                 }
             }
@@ -317,7 +321,7 @@ namespace Heph
 
         /**
          * Gets a reference to the element at the provided indices.
-         * 
+         *
          * @tparam CheckErrors Determines whether to validate indices.
          * @tparam NDim Number of dimensions for SFINAE, must be equal to ``NDimensions``.
          * @param ptr Pointer to the first element of the buffer.
@@ -338,7 +342,7 @@ namespace Heph
 
         /**
          * Gets a reference to the element at the provided indices.
-         * 
+         *
          * @tparam CheckErrors Determines whether to validate indices.
          * @param ptr Pointer to the first element of the buffer.
          * @param flags Buffer flags.
