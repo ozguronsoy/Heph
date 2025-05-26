@@ -467,6 +467,39 @@ namespace Heph
         }
 
         /**
+         * Shiftes the top-level entries to the left by provided amount.
+         *
+         * @note This method does not change the size of the buffer,
+         * thus the entries that are shifted out of bounds will be lost.
+         *
+         * @param buffer Buffer that will be shifted.
+         * @param n Number of top-level entries to shift left.
+         */
+        static void ShiftLeft(Buffer& buffer, size_t n)
+        {
+            if (buffer.IsEmpty())
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "Buffer cannot be empty.");
+            }
+
+            if (n == 0) return;
+            if (n >= buffer.Size(0))
+            {
+                buffer.Reset();
+                return;
+            }
+
+            iterator itBegin = buffer.begin();
+            itBegin.IncrementIndex(0, n);
+
+            (void)std::copy(itBegin, buffer.end(), buffer.begin());
+
+            // set the invalid entries at the end to default value
+            itBegin.IncrementIndex(0, buffer.Size(0) - 2 * n);
+            (void)std::fill(itBegin, buffer.end(), TData());
+        }
+
+        /**
          * Copies a section of the buffer.
          *
          * @note This method allocates memory for the destination buffer, hence no need to allocate in advance.
