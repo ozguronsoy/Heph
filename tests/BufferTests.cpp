@@ -86,6 +86,12 @@ public:
         return *this;
     }
 
+    TestBuffer& operator>>=(size_t n)
+    {
+        Base::ShiftRight(*this, n);
+        return *this;
+    }
+
     TestBuffer SubBuffer(size_t index, size_t size)
     {
         TestBuffer result;
@@ -296,6 +302,56 @@ TEST(HephTest, Buffer_ShiftLeft)
 
         b1 = b0;
         b1 <<= 100;
+        for (size_t i = 0; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b1.Size(1); ++j)
+                EXPECT_EQ((b1[i, j]), expected2[i][j]);
+    }
+}
+
+TEST(HephTest, Buffer_ShiftRight)
+{
+    {
+        constexpr test_data_t expected0[5] = { 1, 2, 3, 4, 5 };
+        constexpr test_data_t expected1[5] = { 0, 0, 0, 1, 2 };
+        constexpr test_data_t expected2[5] = { 0, 0, 0, 0, 0 };
+        const TestBuffer<1> b0 = { 1, 2, 3, 4, 5 };
+        TestBuffer<1> b1 = b0;
+
+        b1 >>= 0;
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected0[i]);
+
+        b1 = b0;
+        b1 >>= 3;
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected1[i]);
+
+        b1 = b0;
+        b1 >>= 100;
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], expected2[i]);
+    }
+
+    {
+        constexpr test_data_t expected0[5][3] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+        constexpr test_data_t expected1[5][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1, 2, 3}, {4, 5, 6} };
+        constexpr test_data_t expected2[5][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+        const TestBuffer<2> b0 = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
+        TestBuffer<2> b1 = b0;
+
+        b1 >>= 0;
+        for (size_t i = 0; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b1.Size(1); ++j)
+                EXPECT_EQ((b1[i, j]), expected0[i][j]);
+
+        b1 = b0;
+        b1 >>= 3;
+        for (size_t i = 0; i < b1.Size(0); ++i)
+            for (size_t j = 0; j < b1.Size(1); ++j)
+                EXPECT_EQ((b1[i, j]), expected1[i][j]);
+
+        b1 = b0;
+        b1 >>= 100;
         for (size_t i = 0; i < b1.Size(0); ++i)
             for (size_t j = 0; j < b1.Size(1); ++j)
                 EXPECT_EQ((b1[i, j]), expected2[i][j]);

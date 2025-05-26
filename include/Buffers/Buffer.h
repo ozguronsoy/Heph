@@ -473,7 +473,7 @@ namespace Heph
          * thus the entries that are shifted out of bounds will be lost.
          *
          * @param buffer Buffer that will be shifted.
-         * @param n Number of top-level entries to shift left.
+         * @param n Number of top-level entries to shift.
          */
         static void ShiftLeft(Buffer& buffer, size_t n)
         {
@@ -496,7 +496,41 @@ namespace Heph
 
             // set the invalid entries at the end to default value
             itBegin.IncrementIndex(0, buffer.Size(0) - 2 * n);
-            (void)std::fill(itBegin, buffer.end(), TData());
+            std::fill(itBegin, buffer.end(), TData());
+        }
+
+        /**
+         * Shiftes the top-level entries to the right by provided amount.
+         *
+         * @note This method does not change the size of the buffer,
+         * thus the entries that are shifted out of bounds will be lost.
+         *
+         * @param buffer Buffer that will be shifted.
+         * @param n Number of top-level entries to shift.
+         */
+        static void ShiftRight(Buffer& buffer, size_t n)
+        {
+            if (buffer.IsEmpty())
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "Buffer cannot be empty.");
+            }
+
+            if (n == 0) return;
+            if (n >= buffer.Size(0))
+            {
+                buffer.Reset();
+                return;
+            }
+
+            iterator itSrcEnd = buffer.end();
+            itSrcEnd.DecrementIndex(0, n);
+
+            iterator itDestBegin = buffer.begin();
+            itDestBegin.IncrementIndex(0, n);
+
+            (void)std::copy(buffer.begin(), itSrcEnd, itDestBegin);
+
+            std::fill(buffer.begin(), itDestBegin, TData());
         }
 
         /**
