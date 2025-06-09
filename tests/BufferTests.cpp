@@ -251,6 +251,31 @@ TEST(HephTest, Buffer_Constructors)
     }
 }
 
+TEST(HephTest, Buffer_Copy)
+{
+    TestBuffer<2> b1 = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12} };
+    TestBuffer<2> b2 = b1;
+    EXPECT_EQ(b1, b2);
+    EXPECT_NO_FATAL_FAILURE((b1[0, 0]));
+    EXPECT_NO_FATAL_FAILURE(b1 = b1);
+}
+
+TEST(HephTest, Buffer_Move)
+{
+    TestBuffer<2> b1 = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12} };
+    TestBuffer<2> b2 = std::move(b1);
+    EXPECT_TRUE(b1.IsEmpty());
+    EXPECT_FALSE(b2.IsEmpty());
+    EXPECT_THROW(b1.At(0, 0), InvalidArgumentException);
+    
+    size_t k = 1;
+    for (test_data_t element : b2)
+    {
+        EXPECT_EQ(element, k);
+        k++;
+    }
+}
+
 TEST(HephTest, Buffer_Reset)
 {
     {
@@ -553,7 +578,7 @@ TEST(HephTest, Buffer_Append)
 TEST(HephTest, Buffer_Insert)
 {
     {
-        constexpr test_data_t expected[10] = {1, 2, 3, 8, 9, 10, 4, 5, 6, 7};
+        constexpr test_data_t expected[10] = { 1, 2, 3, 8, 9, 10, 4, 5, 6, 7 };
         TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
         TestBuffer<1> b2 = { 8, 9, 10 };
 
