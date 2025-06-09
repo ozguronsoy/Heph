@@ -711,6 +711,72 @@ namespace Heph
         }
 
         /**
+         * Inserts the elements of the source buffer to the destination buffer.
+         *
+         * @note For multidimensional buffers, all dimensions except the first must have the same size in both buffers.
+         *
+         * @param dest The buffer to which elements will be inserted.
+         * @param src The buffer whose elements will be inserted to the destination.
+         * @exception InvalidArgumentException
+         * @exception InvalidOperationException
+         * @exception InsufficientMemoryException
+         */
+        static void Insert(Buffer& dest, const Buffer& src, size_t index)
+        {
+            if (index > dest.Size(0))
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
+            }
+
+            if (index == 0)
+            {
+                Buffer::Prepend(dest, src);
+                return;
+            }
+            else if (index == dest.Size(0))
+            {
+                Buffer::Append(dest, src);
+                return;
+            }
+
+            if constexpr (NDimensions > 1)
+            {
+                if (!std::equal(dest.size.cbegin() + 1, dest.size.cend(), src.size.cbegin() + 1))
+                {
+                    HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "All dimensions except the first must have the same size in both buffers.");
+                }
+            }
+
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+
+            iterator itInsertBegin = dest.begin();
+            itInsertBegin.IncrementIndex(0, index);
+
+            iterator itShiftDestBegin = itInsertBegin;
+            itShiftDestBegin.IncrementIndex(0, src.Size(0));
+
+            iterator itShiftDestEnd = dest.end();
+            itShiftDestEnd.IncrementIndex(0, src.Size(0));
+
+            (void)std::move_backward(itInsertBegin, dest.end(), itShiftDestEnd); // shift right side of the dest buffer
+
+            if (&dest == &src)
+            {
+                (void)std::copy(dest.begin(), itInsertBegin, itInsertBegin); // left side
+
+                itInsertBegin.IncrementIndex(0, index);
+                (void)std::copy(itShiftDestBegin, itShiftDestEnd, itInsertBegin); // right side
+            }
+            else
+            {
+                (void)std::copy(src.begin(), src.end(), itInsertBegin);
+            }
+
+            if constexpr (NDimensions == 1) dest.size += src.size;
+            else dest.size[0] += src.size[0];
+        }
+
+        /**
          * Removes a section of the buffer.
          *
          * @param buffer The buffer to be cut.
