@@ -15,6 +15,9 @@ public:
     using typename Base::buffer_size_t;
     using initializer_list = std::conditional_t<NDimensions == 1, std::initializer_list<test_data_t>, std::initializer_list<std::initializer_list<test_data_t>>>;
 
+    using Base::Base;
+    using Base::operator=;
+
 public:
     TestBuffer() : Base() {}
 
@@ -25,10 +28,6 @@ public:
     {
         *this = rhs;
     }
-
-    TestBuffer(const TestBuffer& rhs) : Base(rhs) {}
-
-    TestBuffer(TestBuffer&& rhs) noexcept : Base(std::move(rhs)) {}
 
     constexpr TestBuffer& operator=(const initializer_list& rhs)
     {
@@ -68,16 +67,6 @@ public:
         }
 
         return *this;
-    }
-
-    TestBuffer& operator=(const TestBuffer& rhs)
-    {
-        return reinterpret_cast<TestBuffer&>(Base::operator=(rhs));
-    }
-
-    TestBuffer& operator=(TestBuffer&& rhs) noexcept
-    {
-        return reinterpret_cast<TestBuffer&>(Base::operator=(std::move(rhs)));
     }
 
     TestBuffer& operator<<=(size_t n)
