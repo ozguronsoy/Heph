@@ -9,6 +9,7 @@
 #include "Exceptions/InvalidArgumentException.h"
 #include "Exceptions/InvalidOperationException.h"
 #include "Exceptions/InsufficientMemoryException.h"
+#include <initializer_list>
 #include <tuple>
 #include <algorithm>
 #include <ranges>
@@ -18,6 +19,18 @@
 
 namespace Heph
 {
+    template<BufferElement TData, size_t NDimensions>
+    struct BufferInitializerListHelper
+    {
+        using type = std::initializer_list<typename BufferInitializerListHelper<TData, (NDimensions - 1)>::type>;
+    };
+
+    template<BufferElement TData>
+    struct BufferInitializerListHelper<TData, 1>
+    {
+        using type = std::initializer_list<TData>;
+    };
+
     /**
     * @brief Container for storing large sequential data.
     *
@@ -41,6 +54,9 @@ namespace Heph
         using buffer_size_t = iterator::buffer_size_t;
         /** @copybrief iterator::buffer_index_t */
         using buffer_index_t = iterator::buffer_index_t;
+
+        /** @brief Type of the initializer list. */
+        using InitializerList = typename BufferInitializerListHelper<TData, NDimensions>::type;
 
         /** @copybrief iterator::BUFFER_SIZE_ZERO */
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
@@ -107,6 +123,19 @@ namespace Heph
             this->CalcStrides();
         }
 
+        /**
+         * @copydoc constructor
+         *
+         * @param rhs Initializer list.
+         * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
+         */
+        Buffer(const InitializerList& rhs)
+            : pData(nullptr)
+        {
+            *this = rhs;
+        }
+
         /** @copydoc copy_constructor */
         Buffer(const Buffer& rhs)
             : pData(nullptr)
@@ -125,6 +154,75 @@ namespace Heph
         virtual ~Buffer()
         {
             this->Release();
+        }
+
+        /**
+         * Copies the elements of ``rhs``.
+         *
+         * @param rhs Initializer list.
+         * @return Reference to current instance.
+         * @exception InvalidArgumentException
+         * @exception InsufficientMemoryException
+         */
+        Buffer& operator=(const InitializerList& rhs)
+        {
+            this->Release();
+
+            if (rhs.size() == 0) return *this;
+
+            if constexpr (NDimensions == 1)
+            {
+                Buffer::Reallocate(this->pData, 0, rhs.size(), BufferFlags::AllocUninitialized);
+                (void)std::copy(rhs.begin(), rhs.end(), this->begin());
+
+                this->size = rhs.size();
+                this->CalcStrides();
+            }
+            else
+            {
+                this->size[0] = rhs.size();
+
+                {
+                    Buffer<TData, (NDimensions - 1)> temp(*rhs.begin());
+
+                    if (temp.ElementCount() == 0) return *this;
+
+                    Buffer::Reallocate(this->pData, 0, temp.ElementCount() * rhs.size(), BufferFlags::AllocUninitialized);
+                    if constexpr (NDimensions == 2)
+                        this->size[1] = temp.Size();
+                    else
+                        (void)std::copy(temp.Size().begin(), temp.Size().end(), this->size.begin() + 1);
+                }
+                this->CalcStrides();
+
+
+                iterator it = this->begin();
+                for (const auto& sublist : rhs)
+                {
+                    Buffer<TData, (NDimensions - 1)> temp(sublist);
+
+                    if constexpr (NDimensions == 2)
+                    {
+                        if (this->size[1] != temp.Size())
+                        {
+                            HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Size of all sub lists must be the same.");
+                        }
+                    }
+                    else
+                    {
+                        if (!std::equal(temp.Size().begin(), temp.Size().end(), this->size.begin() + 1))
+                        {
+                            HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Size of all sub lists must be the same.");
+                        }
+                    }
+
+                    (void)std::copy(temp.begin(), temp.end(), it);
+
+                    it.IncrementIndex(0, 1);
+                }
+            }
+
+            return *this;
         }
 
         /**

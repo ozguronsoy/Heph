@@ -1,5 +1,5 @@
-#ifndef HEPH_ARITHMETIC_BUFFER
-#define HEPH_ARITHMETIC_BUFFER
+#ifndef HEPH_ARITHMETIC_BUFFER_H
+#define HEPH_ARITHMETIC_BUFFER_H
 
 #include "HephShared.h"
 #include "Buffer.h"
@@ -18,7 +18,7 @@ namespace Heph
      */
     template <BufferElement TData, size_t NDimensions = 1>
         requires Arithmetic<TData, TData>&& ArithmeticAssignable<TData, TData>
-    class ArithmeticBuffer : public Buffer<TData, NDimensions>
+    class HEPH_API ArithmeticBuffer : public Buffer<TData, NDimensions>
     {
     public:
         /** @brief Base class. */
@@ -36,6 +36,8 @@ namespace Heph
         using typename Buffer::buffer_size_t;
         /** @copybrief Buffer::buffer_index_t */
         using typename Buffer::buffer_index_t;
+        /** @copybrief Buffer::InitializerList */
+        using typename Buffer::InitializerList;
 
         /** @copybrief Buffer::BUFFER_SIZE_ZERO */
         using Buffer::BUFFER_SIZE_ZERO;
@@ -53,6 +55,8 @@ namespace Heph
         explicit ArithmeticBuffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size) : Buffer(flags, std::forward<decltype(size)>(size)...) {}
         /** @copydoc Buffer::Buffer */
         explicit ArithmeticBuffer(Enum<BufferFlags> flags, const buffer_size_t& size) : Buffer(flags, size) {}
+        /** @copydoc Buffer::Buffer(const InitializerList&) */
+        ArithmeticBuffer(const InitializerList& rhs) : Buffer(rhs) {}
         /** @copydoc Buffer::Buffer(const Buffer&) */
         ArithmeticBuffer(const ArithmeticBuffer& rhs) = default;
         /** @copydoc Buffer::Buffer(Buffer&&) */
@@ -127,7 +131,7 @@ namespace Heph
 
         /**
          * Performs element-wise addition.
-         * 
+         *
          * @tparam TRhs Type of the rhs elements.
          * @param rhs Right operand.
          * @return Reference to current instance.
@@ -152,7 +156,7 @@ namespace Heph
 
         /**
          * Performs element-wise subtraction.
-         * 
+         *
          * @tparam TRhs Type of the rhs elements.
          * @param rhs Right operand.
          * @return Reference to current instance.
@@ -177,7 +181,7 @@ namespace Heph
 
         /**
          * Performs element-wise multiplication.
-         * 
+         *
          * @tparam TRhs Type of the rhs elements.
          * @param rhs Right operand.
          * @return Reference to current instance.
@@ -202,7 +206,7 @@ namespace Heph
 
         /**
          * Performs element-wise division.
-         * 
+         *
          * @tparam TRhs Type of the rhs elements.
          * @param rhs Right operand.
          * @return Reference to current instance.
@@ -223,6 +227,23 @@ namespace Heph
             for (; itRhs != itRhsEnd; ++itLhs, ++itRhs) *itLhs /= *itRhs;
 
             return *this;
+        }
+
+        /**
+         * Inverts the elements.
+         *
+         * @exception InvalidOperationException
+        */
+        void Invert()
+        {
+            if constexpr (std::is_integral_v<TData> && std::is_unsigned_v<TData>)
+            {
+                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidOperationException, HEPH_FUNC, "TData must be signed.");
+            }
+            else
+            {
+                for (TData& element : *this) element = -element;
+            }
         }
 
         /** Gets the element with the minimum value. */
@@ -266,70 +287,6 @@ namespace Heph
             for (const TData& element : *this)
                 sumSquared += static_cast<double>(element) * static_cast<double>(element);
             return std::sqrt(sumSquared / static_cast<double>(elementCount));
-        }
-    };
-
-    /**
-     * @brief Base class for buffers that store signed arithmetic types. Provides invert operation.
-     *
-     * @tparam TData Type of the elements stored in buffer. Must be default constructible and trivally destructible.
-     * @tparam NDimensions Number of dimensions.
-     */
-    template <BufferElement TData, size_t NDimensions = 1>
-        requires std::is_signed_v<TData>
-    class SignedArithmeticBuffer : public ArithmeticBuffer<TData, NDimensions>
-    {
-    public:
-        /** @brief Base class. */
-        using ArithmeticBuffer = ArithmeticBuffer<TData, NDimensions>;
-        /** @brief Base class. */
-        using typename ArithmeticBuffer::Buffer;
-
-        /** @copybrief Buffer::iterator */
-        using typename ArithmeticBuffer::iterator;
-        /** @copybrief Buffer::const_iterator */
-        using typename ArithmeticBuffer::const_iterator;
-        /** @copybrief Buffer::reverse_iterator */
-        using typename ArithmeticBuffer::reverse_iterator;
-        /** @copybrief Buffer::const_reverse_iterator */
-        using typename ArithmeticBuffer::const_reverse_iterator;
-        /** @copybrief Buffer::buffer_size_t */
-        using typename ArithmeticBuffer::buffer_size_t;
-        /** @copybrief Buffer::buffer_index_t */
-        using typename ArithmeticBuffer::buffer_index_t;
-
-        /** @copybrief Buffer::BUFFER_SIZE_ZERO */
-        using Buffer::BUFFER_SIZE_ZERO;
-        /** @copybrief Buffer::BUFFER_INDEX_ZERO */
-        using Buffer::BUFFER_INDEX_ZERO;
-
-    protected:
-        /** @copybrief ArithmeticBuffer::MIN_ELEMENT */
-        using ArithmeticBuffer::MIN_ELEMENT;
-        /** @copybrief ArithmeticBuffer::MAX_ELEMENT */
-        using ArithmeticBuffer::MAX_ELEMENT;
-
-    public:
-        /** @copydoc Buffer::Buffer */
-        explicit SignedArithmeticBuffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size) : ArithmeticBuffer(flags, std::forward<decltype(size)>(size)...) {}
-        /** @copydoc Buffer::Buffer */
-        explicit SignedArithmeticBuffer(Enum<BufferFlags> flags, const buffer_size_t& size) : ArithmeticBuffer(flags, size) {}
-        /** @copydoc Buffer::Buffer(const Buffer&) */
-        SignedArithmeticBuffer(const SignedArithmeticBuffer& rhs) = default;
-        /** @copydoc Buffer::Buffer(Buffer&&) */
-        SignedArithmeticBuffer(SignedArithmeticBuffer&& rhs) noexcept = default;
-        /** @copydoc Buffer::operator=(const Buffer&) */
-        SignedArithmeticBuffer& operator=(const SignedArithmeticBuffer& rhs) = default;
-        /** @copydoc Buffer::operator=(Buffer&&) */
-        SignedArithmeticBuffer& operator=(SignedArithmeticBuffer&& rhs) noexcept = default;
-
-        /** @copydoc destructor */
-        virtual ~SignedArithmeticBuffer() = default;
-
-        /** Inverts the elements. */
-        void Invert()
-        {
-            for (TData& element : *this) element = -element;
         }
     };
 }

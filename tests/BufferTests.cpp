@@ -13,61 +13,13 @@ public:
     using typename Base::iterator;
     using typename Base::const_iterator;
     using typename Base::buffer_size_t;
-    using initializer_list = std::conditional_t<NDimensions == 1, std::initializer_list<test_data_t>, std::initializer_list<std::initializer_list<test_data_t>>>;
 
     using Base::Base;
     using Base::operator=;
 
 public:
-    TestBuffer() : Base() {}
-
     template<typename... Args>
     TestBuffer(BufferFlags flags = BufferFlags::None, Args... args) : Base(flags, std::forward<Args>(args)...) {}
-
-    TestBuffer(const initializer_list& rhs) : Base()
-    {
-        *this = rhs;
-    }
-
-    constexpr TestBuffer& operator=(const initializer_list& rhs)
-    {
-        this->Release();
-
-        if (rhs.size() > 0)
-        {
-            if constexpr (NDimensions == 1)
-            {
-                this->pData = Base::Allocate(rhs.size() * sizeof(test_data_t), BufferFlags::AllocUninitialized);
-                (void)std::copy(rhs.begin(), rhs.end(), this->begin());
-                this->size = rhs.size();
-            }
-            else
-            {
-                const size_t s1 = rhs.begin()->size();
-                if (s1 == 0) return *this;
-
-                this->size[0] = rhs.size();
-                this->size[1] = s1;
-
-                this->CalcStrides();
-
-                this->pData = Base::Allocate(this->ElementCount() * sizeof(test_data_t), BufferFlags::AllocUninitialized);
-                iterator it = this->begin();
-                for (const auto& il : rhs)
-                {
-                    if (il.size() != s1)
-                    {
-                        HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Invalid initializer list.");
-                    }
-
-                    (void)std::copy(il.begin(), il.end(), it);
-                    it += s1;
-                }
-            }
-        }
-
-        return *this;
-    }
 
     TestBuffer& operator<<=(size_t n)
     {
@@ -211,7 +163,6 @@ TEST(HephTest, Buffer_Constructors)
     }
 
     {
-        constexpr std::array<test_data_t, 5> b1_expected = { 1, 2, 3, 4, 5 };
         TestBuffer<1> b1 = { 1, 2, 3, 4, 5 };
         TestBuffer<2> b2 = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12} };
 
@@ -219,8 +170,8 @@ TEST(HephTest, Buffer_Constructors)
         EXPECT_EQ(b2.Size(0), 3);
         EXPECT_EQ(b2.Size(1), 4);
 
-        for (size_t i = 0; i < b1_expected.size(); ++i)
-            EXPECT_EQ(b1[i], b1_expected[i]);
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], (i + 1));
 
         for (size_t i = 0, k = 1; i < b2.Size(0); ++i)
             for (size_t j = 0; j < b2.Size(1); ++j, ++k)
@@ -451,7 +402,7 @@ TEST(HephTest, Buffer_Prepend)
 
     {
         TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
-        TestBuffer<1> b2 = {};
+        TestBuffer<1> b2;
 
         b1.Prepend(b2);
         EXPECT_EQ(b1.Size(), 7);
@@ -460,7 +411,7 @@ TEST(HephTest, Buffer_Prepend)
     }
 
     {
-        TestBuffer<1> b1 = {};
+        TestBuffer<1> b1;
         TestBuffer<1> b2 = { 8, 9, 10 };
 
         b1.Prepend(b2);
@@ -515,7 +466,7 @@ TEST(HephTest, Buffer_Append)
 
     {
         TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
-        TestBuffer<1> b2 = {};
+        TestBuffer<1> b2;
 
         b1.Append(b2);
         EXPECT_EQ(b1.Size(), 7);
@@ -524,7 +475,7 @@ TEST(HephTest, Buffer_Append)
     }
 
     {
-        TestBuffer<1> b1 = {};
+        TestBuffer<1> b1;
         TestBuffer<1> b2 = { 8, 9, 10 };
 
         b1.Append(b2);
@@ -579,7 +530,7 @@ TEST(HephTest, Buffer_Insert)
 
     {
         TestBuffer<1> b1 = { 1, 2, 3, 4, 5, 6, 7 };
-        TestBuffer<1> b2 = {};
+        TestBuffer<1> b2;
 
         b1.Insert(b2, 5);
         EXPECT_EQ(b1.Size(), 7);
@@ -588,7 +539,7 @@ TEST(HephTest, Buffer_Insert)
     }
 
     {
-        TestBuffer<1> b1 = {};
+        TestBuffer<1> b1;
         TestBuffer<1> b2 = { 8, 9, 10 };
 
         b1.Insert(b2, 0);
