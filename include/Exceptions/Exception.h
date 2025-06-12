@@ -32,23 +32,24 @@ namespace Heph
     class HEPH_API Exception : public std::exception, public ICloneable
     {
     public:
+        /** @brief List for storing exceptions. */
         using ExceptionList = std::list<std::unique_ptr<Exception>>;
 
-        /** Raised when an exception occurs. */
+        /** @brief Raised when an exception occurs. */
         static inline Event ExceptionEvent = Event();
 
     private:
-        /** Name of the method where the exception occurred. */
+        /** @brief Name of the method where the exception occurred. */
         std::string method;
-        /** Description of the exception. */
+        /** @brief Description of the exception. */
         std::string message;
 
     public:
         /**
          * @copydoc constructor
          *
-         * @param method @copydetails method
-         * @param message @copydetails message
+         * @param method @copybrief method
+         * @param message @copybrief message
          */
         Exception(const std::string& method, const std::string& message);
 

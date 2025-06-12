@@ -3,6 +3,8 @@
 
 /** @file */
 
+#include <cstddef>
+
 #ifndef HEPH_VERSION_MAJOR
 #define HEPH_VERSION_MAJOR 0
 #define HEPH_VERSION_MINOR 0
@@ -75,7 +77,7 @@
 namespace Heph
 {
     /** @brief Stores version information for run-time verification. */
-    struct Version
+    struct HEPH_API Version
     {
         /** @brief Indicates significant changes or updates. */
         unsigned int major;
@@ -89,7 +91,7 @@ namespace Heph
     extern HEPH_API const Version version;
 
     /** @brief Defines the supported platforms. */
-    enum class Platform
+    enum Platform
     {
         /** @brief Represents the Windows operating system. */
         Windows,
@@ -116,6 +118,9 @@ namespace Heph
 #endif
 
     };
+
+    /** @brief Integral type for index. */
+    using index_t = std::ptrdiff_t;
 }
 
 /** @defgroup default_constructor

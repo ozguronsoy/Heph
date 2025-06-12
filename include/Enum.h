@@ -2,6 +2,7 @@
 #define HEPH_ENUM_H
 
 #include "HephShared.h"
+#include <cstdint>
 #include <type_traits>
 
 /** @file */

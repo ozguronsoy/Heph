@@ -2,9 +2,7 @@ name: Linux
 
 on:
   push:
-    branches: ["main", "CI"]
   pull_request:
-    branches: ["main"]
 
   workflow_dispatch:
 
@@ -48,3 +46,37 @@ jobs:
       - name: Run Tests
         working-directory: ${{github.workspace}}
         run: ./build/tests/HephTests
+
+    clang:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Setup
+          run: |
+            sudo apt update
+            sudo apt install uuid-dev clang-18
+    
+            sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100
+            sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100
+    
+            clang --version
+            clang++ --version
+
+        - name: Configure CMake
+          working-directory: ${{github.workspace}}
+          run: > 
+            cmake
+            -S .
+            -B build/
+            -DHEPH_BUILD_TESTS=ON
+            -DCMAKE_CXX_FLAGS='-w -O2'
+            .
+
+        - name: Build
+          working-directory: ${{github.workspace}}
+          run: cmake --build build
+
+        - name: Run Tests
+          working-directory: ${{github.workspace}}
+          run: ./build/tests/HephTests

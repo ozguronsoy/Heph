@@ -14,9 +14,9 @@ namespace Heph::Native
     class HEPH_API AndroidHelpers final
     {
     public:
-        /** Default JNI version.  */
+        /** @brief Default JNI version.  */
         static constexpr jint JNI_VERSION = JNI_VERSION_1_6;
-        /** Java Virtual Machine, must be set manually if JNI_OnLoad method is overridden. */
+        /** @brief Java Virtual Machine, must be set manually if JNI_OnLoad method is overridden. */
         static inline JavaVM* jvm = nullptr;
 
     public:

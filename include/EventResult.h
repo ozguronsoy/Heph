@@ -11,7 +11,7 @@ namespace Heph
 	struct HEPH_API EventResult
 	{
 		/**
-		 * Indicates the event is handled and no further handlers will be invoked.<br>
+		 * @brief Indicates the event is handled and no further handlers will be invoked.<br>
 		 * Set by the user.
 		 */
 		bool isHandled;
