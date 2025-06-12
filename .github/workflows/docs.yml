@@ -1,4 +1,4 @@
-name: Documentation
+name: Docs
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
           doxygen --version
         
       - name: Build Docs
-        run: >
+        run: |
           cmake -S . -B build/ -DHEPH_BUILD_DOCS=ON
           cmake --build build   
         
