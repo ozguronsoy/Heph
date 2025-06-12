@@ -1,0 +1,53 @@
+name: Documentation
+
+on:
+  push:
+  pull_request:
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "docs"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: |
+          sudo apt update
+          sudo apt remove doxygen
+          cd /tmp
+          wget https://www.doxygen.nl/files/doxygen-1.11.0.linux.bin.tar.gz
+          tar -zxvf doxygen-1.11.0.linux.bin.tar.gz
+          sudo mv doxygen-1.11.0/bin/* /usr/local/bin/
+          doxygen --version
+        
+      - name: Build Docs
+        run: >
+          cmake -S . -B build/ -DHEPH_BUILD_DOCS=ON
+          cmake --build build   
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './build/docs/html'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
