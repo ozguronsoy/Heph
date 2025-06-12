@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
 #include "ArithmeticBuffer.h"
-#include "RealBuffer.h"
 
 using namespace Heph;
 using test_data_t = double;
 template<size_t NDims>
-using ArithmeticTestBuffer = RealBuffer<test_data_t, NDims>;
+using ArithmeticTestBuffer = ArithmeticBuffer<test_data_t, NDims>;
 
 TEST(HephTest, ArithmeticBuffer_MinMax)
 {

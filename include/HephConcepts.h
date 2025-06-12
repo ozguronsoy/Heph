@@ -59,7 +59,7 @@ namespace Heph
     template<typename TLhs, typename TRhs = TLhs, typename TResult = TLhs>
     concept Multipliable = requires(TLhs lhs, TRhs rhs)
     {
-        { lhs * rhs } -> std::convertible_to<TResult>;
+        { lhs* rhs } -> std::convertible_to<TResult>;
     };
 
     /**
@@ -106,6 +106,26 @@ namespace Heph
      */
     template<typename TLhs, typename TRhs = TLhs>
     concept ArithmeticAssignable = AddAssignable<TLhs, TRhs>&& SubtractAssignable<TLhs, TRhs>&& MultiplyAssignable<TLhs, TRhs>&& DivideAssignable<TLhs, TRhs>;
+
+    /** 
+     * @brief Specifies that a valid less than operator overload exists,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``.
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept HasLessThan = requires(TLhs lhs, TRhs rhs)
+    {
+        { lhs < rhs } -> std::convertible_to<bool>;
+    };
+
+    /** 
+     * @brief Specifies that a valid greater than operator overload exists,
+     * where the left operand is of type ``TLhs`` and the right operand is of type ``TRhs``.
+     */
+    template<typename TLhs, typename TRhs = TLhs>
+    concept HasGreaterThan = requires(TLhs lhs, TRhs rhs)
+    {
+        { lhs > rhs } -> std::convertible_to<bool>;
+    };
 }
 
 #endif

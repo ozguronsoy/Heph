@@ -550,19 +550,17 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Element count cannot be 0.");
             }
 
-            const size_t size_bytes = elementCount * sizeof(TData);
-
-            TData* pData = reinterpret_cast<TData*>(malloc(size_bytes));
+            TData* pData = reinterpret_cast<TData*>(malloc(elementCount * sizeof(TData)));
             if (pData == nullptr)
             {
-                HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to allocate {} bytes.", size_bytes));
+                HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to allocate {} bytes.", elementCount * sizeof(TData)));
             }
 
             if (!flags.Test(BufferFlags::AllocUninitialized))
             {
                 std::fill(
-                    reinterpret_cast<uint8_t*>(pData),
-                    reinterpret_cast<uint8_t*>(pData) + size_bytes,
+                    pData,
+                    pData + elementCount,
                     TData()
                 );
             }
@@ -587,20 +585,17 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "New element count cannot be 0.");
             }
 
-            const size_t oldSize_bytes = oldElementCount * sizeof(TData);
-            const size_t newSize_bytes = newElementCount * sizeof(TData);
-
-            TData* pTemp = reinterpret_cast<TData*>(realloc(pData, newSize_bytes));
+            TData* pTemp = reinterpret_cast<TData*>(realloc(pData, newElementCount * sizeof(TData)));
             if (pTemp == nullptr)
             {
-                HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to reallocate {} bytes.", newSize_bytes));
+                HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to reallocate {} bytes.", newElementCount * sizeof(TData)));
             }
 
             if (newElementCount > oldElementCount && !flags.Test(BufferFlags::AllocUninitialized))
             {
                 std::fill(
-                    reinterpret_cast<uint8_t*>(pTemp) + oldSize_bytes,
-                    reinterpret_cast<uint8_t*>(pTemp) + newSize_bytes,
+                    pTemp + oldElementCount,
+                    pTemp + newElementCount,
                     TData()
                 );
             }
