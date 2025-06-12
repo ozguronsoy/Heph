@@ -19,15 +19,19 @@
 
 namespace Heph
 {
+    /** @brief Helper trait for declaring the initializer list type used in \ref buffers "Buffer". */
     template<BufferElement TData, size_t NDimensions>
     struct BufferInitializerListHelper
     {
+        /** @brief Type of the initializer list. */
         using type = std::initializer_list<typename BufferInitializerListHelper<TData, (NDimensions - 1)>::type>;
     };
 
+    /** @copybrief BufferInitializerListHelper */
     template<BufferElement TData>
     struct BufferInitializerListHelper<TData, 1>
     {
+        /** @copybrief BufferInitializerListHelper::type */
         using type = std::initializer_list<TData>;
     };
 

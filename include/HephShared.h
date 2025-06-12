@@ -3,6 +3,8 @@
 
 /** @file */
 
+#include <cstddef>
+
 #ifndef HEPH_VERSION_MAJOR
 #define HEPH_VERSION_MAJOR 0
 #define HEPH_VERSION_MINOR 0
@@ -116,6 +118,9 @@ namespace Heph
 #endif
 
     };
+
+    /** @brief Integral type for index. */
+    using index_t = std::ptrdiff_t;
 }
 
 /** @defgroup default_constructor

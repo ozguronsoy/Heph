@@ -20,9 +20,6 @@ namespace Heph
     template<typename T>
     concept BufferElement = std::is_default_constructible_v<T> && std::is_trivially_destructible_v<T>;
 
-    /** @brief Integral type for index. */
-    using index_t = std::make_signed_t<size_t>;
-
     /**
      * @brief Iterator for Heph::Buffer.
      *
