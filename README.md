@@ -1,5 +1,6 @@
 # Heph
 
+[![Docs](https://github.com/ozguronsoy/Heph/actions/workflows/docs.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/docs.yml)
 [![Linux](https://github.com/ozguronsoy/Heph/actions/workflows/build_linux.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/build_linux.yml)
 [![Windows](https://github.com/ozguronsoy/Heph/actions/workflows/build_windows.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/build_windows.yml)
 [![Android](https://github.com/ozguronsoy/Heph/actions/workflows/build_android.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/build_android.yml)
@@ -12,10 +13,11 @@
 
 ## Introduction
 
-Heph is a modern cross-platform C++ library that provides common components that are frequently used in most projects, such as:
+Heph is a modern cross-platform C++ library that provides common components that are frequently used in my projects, such as:
 
 - ``Exceptions`` for detailed error handling.
-- ``Events`` for managing callback methods with custom parameters.
+- ``Events`` for managing callback methods.
+- Multidimensional Buffer classes for storing/processing big chunks of sequential data.
 - Wrapper class for generating/managing native UUIDs.
 
 
