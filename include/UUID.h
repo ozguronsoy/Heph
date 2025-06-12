@@ -40,7 +40,7 @@ namespace Heph
 #endif
 
     private:
-        /** UUID data in big-endian order. */
+        /** @brief UUID data in big-endian order. */
         std::array<uint8_t, 16> data;
 
     public:

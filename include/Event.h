@@ -21,7 +21,8 @@ namespace Heph
 
 	public:
 		/**
-		 * Stores custom data to the event handlers as key/value pairs.
+		 * @brief Stores custom data to the event handlers as key/value pairs.
+		 * 
 		 * @important This variable only stores the pointers to the arguments, 
 		 * thus you have to ensure that the arguments still exist when handling the events.
 		 */

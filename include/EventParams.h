@@ -16,10 +16,10 @@ namespace Heph
 	/** @brief Stores the information required to handle an event. */
 	struct HEPH_API EventParams final
 	{
-		/** Pointer to the arguments, can be null. */
+		/** @brief Pointer to the arguments, can be null. */
 		EventArgs* pArgs;
 
-		/** Pointer to the result, can be null. */
+		/** @brief Pointer to the result, can be null. */
 		EventResult* pResult;
 
 		/** @copydoc Event::userArgs */
@@ -28,7 +28,7 @@ namespace Heph
 		/**
 		 * @copydoc constructor
 		 * 
-		 * @param userArgs @copydetails userArgs
+		 * @param userArgs @copybrief userArgs
 		 */
 		explicit EventParams(const UserEventArgs& userArgs);
 	};
