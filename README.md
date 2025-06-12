@@ -1,5 +1,9 @@
 # Heph
 
+[![Linux](https://github.com/ozguronsoy/Heph/actions/workflows/build_linux.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/build_linux.yml)
+[![Windows](https://github.com/ozguronsoy/Heph/actions/workflows/build_windows.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/build_windows.yml)
+[![Android](https://github.com/ozguronsoy/Heph/actions/workflows/build_android.yml/badge.svg)](https://github.com/ozguronsoy/Heph/actions/workflows/build_android.yml)
+
 - [Introduction](#introduction)
 - [Setup](#setup)
     - [Dependencies](#dependencies)
