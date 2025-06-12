@@ -4,7 +4,7 @@
 #include "HephShared.h"
 #include "Buffer.h"
 #include "HephConcepts.h"
-#include "Complex.h"
+#include <complex>
 #include <cmath>
 
 /** @file */
