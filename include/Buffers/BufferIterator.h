@@ -311,7 +311,8 @@ namespace Heph
                     const index_t s = (*this->pSize)[dim];
                     this->indices[dim] = (this->indices[dim] % s + s) % s;
 
-                    this->DecrementIndex(dim - 1, n);
+                    if (dim > 0)
+                        this->DecrementIndex(dim - 1, n);
                 }
             }
         }

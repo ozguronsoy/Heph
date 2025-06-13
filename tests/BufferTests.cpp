@@ -207,12 +207,44 @@ TEST(HephTest, Buffer_Move)
     EXPECT_TRUE(b1.IsEmpty());
     EXPECT_FALSE(b2.IsEmpty());
     EXPECT_THROW(b1.At(0, 0), InvalidArgumentException);
-    
+
     size_t k = 1;
     for (test_data_t element : b2)
     {
         EXPECT_EQ(element, k);
         k++;
+    }
+}
+
+TEST(HephTest, Buffer_Circular)
+{
+    {
+        constexpr test_data_t expected[8] = { 1, 2, 3, 4, 1, 2, 3, 4 };
+        TestBuffer<1> b = { 1, 2, 3, 4 };
+
+        b.SetFlags(BufferFlags::Circular);
+        auto it = b.cend() - 1;
+        for (size_t i = 0; i < 8; ++i, --it)
+        {
+            EXPECT_EQ(b[i], expected[i]);
+            EXPECT_EQ(*it, expected[7 - i]);
+        }
+    }
+
+    {
+        constexpr test_data_t expected[8][2] = { {1, 2}, {3, 4}, {5, 6}, {7, 8}, {1, 2}, {3, 4}, {5, 6}, {7, 8} };
+        TestBuffer<2> b = { {1, 2}, {3, 4}, {5, 6}, {7, 8} };
+
+        b.SetFlags(BufferFlags::Circular);
+        auto it = b.cend() - 1;
+        for (size_t i = 0; i < 8; ++i)
+        {
+            for (size_t j = 0; j < 2; ++j, --it)
+            {
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+                EXPECT_EQ(*it, expected[7 - i][1 - j]);
+            }
+        }
     }
 }
 
