@@ -70,18 +70,18 @@ if(HEPH_BUILD_STATIC OR HEPH_BUILD_SHARED)
     add_definitions(-DHEPH_SHARED_LIB -DHEPH_EXPORTS)
     
     if(HEPH_BUILD_STATIC)
-        add_library(${CMAKE_PROJECT_NAME} STATIC ${HEPH_SOURCES})
+        add_library(Heph STATIC ${HEPH_SOURCES})
     else()
-        add_library(${CMAKE_PROJECT_NAME} SHARED ${HEPH_SOURCES})
+        add_library(Heph SHARED ${HEPH_SOURCES})
     endif()
 
     target_include_directories(
-        ${CMAKE_PROJECT_NAME} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        Heph PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
         $<INSTALL_INTERFACE:include>
     )
 
-    target_link_libraries(${CMAKE_PROJECT_NAME} ${HEPH_LIBRARIES})
+    target_link_libraries(Heph ${HEPH_LIBRARIES})
 
     add_custom_target(
         HEPH_EXPORT_HEADERS ALL
