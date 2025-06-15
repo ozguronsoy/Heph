@@ -1,6 +1,6 @@
 #ifdef __ANDROID__
 
-#include "AndroidHelpers.h"
+#include "Native/AndroidHelpers.h"
 #include "Exceptions/ExternalException.h"
 #include "Exceptions/InvalidArgumentException.h"
 #include "Exceptions/InvalidOperationException.h"

@@ -11,7 +11,7 @@
 #ifdef _WIN32
 #include <comdef.h>
 #elif defined(__ANDROID__)
-#include "AndroidHelpers.h"
+#include "Native/AndroidHelpers.h"
 #elif defined(__linux__)
 #include <uuid/uuid.h>
 struct __heph_uuid_t_wrapper
