@@ -20,9 +20,7 @@ option(HEPH_BUILD_DOCS "HEPH_BUILD_DOCS" Off)
 option(HEPH_BUILD_STATIC "HEPH_BUILD_STATIC" Off)
 option(HEPH_BUILD_SHARED "HEPH_BUILD_SHARED" Off)
 
-if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-    project(Heph VERSION ${HEPH_VERSION} LANGUAGES CXX)
-endif()
+project(Heph VERSION ${HEPH_VERSION} LANGUAGES CXX)
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
 
@@ -39,10 +37,6 @@ endif()
 
 include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
-)
-
-file(GLOB_RECURSE HEPH_HEADERS
-    ${CMAKE_CURRENT_LIST_DIR}/include/*.h
 )
 
 file(GLOB_RECURSE HEPH_SOURCES
@@ -81,12 +75,21 @@ if(HEPH_BUILD_STATIC OR HEPH_BUILD_SHARED)
         add_library(${CMAKE_PROJECT_NAME} SHARED ${HEPH_SOURCES})
     endif()
 
+    target_include_directories(
+        ${CMAKE_PROJECT_NAME} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    )
+
     target_link_libraries(${CMAKE_PROJECT_NAME} ${HEPH_LIBRARIES})
 
-    add_custom_target(HEPH_EXPORT_HEADERS ALL
+    add_custom_target(
+        HEPH_EXPORT_HEADERS ALL
+
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_LIST_DIR}/include
             ${CMAKE_CURRENT_BINARY_DIR}/include/Heph
+
         COMMENT "Copying all headers with preserved subfolders"
     )
 
