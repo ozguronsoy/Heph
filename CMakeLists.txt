@@ -15,10 +15,14 @@ add_definitions(
     -DHEPH_VERSION_PATCH=${HEPH_VERSION_PATCH}
 )
 
-option(HEPH_BUILD_STATIC "HEPH_BUILD_STATIC" Off)
-option(HEPH_BUILD_SHARED "HEPH_BUILD_SHARED" Off)
 option(HEPH_BUILD_TESTS "HEPH_BUILD_TESTS" Off)
 option(HEPH_BUILD_DOCS "HEPH_BUILD_DOCS" Off)
+option(HEPH_BUILD_STATIC "HEPH_BUILD_STATIC" Off)
+option(HEPH_BUILD_SHARED "HEPH_BUILD_SHARED" Off)
+
+if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
+    project(Heph VERSION ${HEPH_VERSION} LANGUAGES CXX)
+endif()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
 
@@ -33,15 +37,8 @@ else()
 
 endif()
 
-if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-    project(Heph VERSION ${HEPH_VERSION} LANGUAGES CXX)
-endif()
-
 include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
-    ${CMAKE_CURRENT_LIST_DIR}/include/Buffers
-    ${CMAKE_CURRENT_LIST_DIR}/include/Exceptions
-    ${CMAKE_CURRENT_LIST_DIR}/include/Native
 )
 
 file(GLOB_RECURSE HEPH_HEADERS
@@ -58,10 +55,39 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(HEPH_LIBRARIES ${HEPH_LIBRARIES} uuid)
 endif()
 
+if(HEPH_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
+
 if(HEPH_BUILD_DOCS)
     add_subdirectory(docs)
 endif()
 
-if(HEPH_BUILD_TESTS)
-    add_subdirectory(tests)
+if(HEPH_BUILD_STATIC OR HEPH_BUILD_SHARED)
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(CMAKE_IMPORT_LIBRARY_PREFIX "")
+        set(CMAKE_IMPORT_LIBRARY_SUFFIX ".lib")
+        set(CMAKE_STATIC_LIBRARY_PREFIX "")
+        set(CMAKE_STATIC_LIBRARY_SUFFIX ".lib")
+        set(CMAKE_SHARED_LIBRARY_PREFIX "")
+    endif()
+
+    add_definitions(-DHEPH_SHARED_LIB -DHEPH_EXPORTS)
+    
+    if(HEPH_BUILD_STATIC)
+        add_library(${CMAKE_PROJECT_NAME} STATIC ${HEPH_SOURCES})
+    else()
+        add_library(${CMAKE_PROJECT_NAME} SHARED ${HEPH_SOURCES})
+    endif()
+
+    target_link_libraries(${CMAKE_PROJECT_NAME} ${HEPH_LIBRARIES})
+
+    add_custom_target(HEPH_EXPORT_HEADERS ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/include/Heph
+        COMMENT "Copying all headers with preserved subfolders"
+    )
+
 endif()

@@ -1,4 +1,4 @@
-#include "ArithmeticBuffer.h"
+#include "Buffers/ArithmeticBuffer.h"
 
 namespace Heph
 {

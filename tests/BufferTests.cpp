@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Buffer.h"
+#include "Buffers/Buffer.h"
 
 using namespace Heph;
 using test_data_t = int;

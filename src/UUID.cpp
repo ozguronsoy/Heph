@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #ifdef _WIN32
-#include "WinHelpers.h"
+#include "Native/WinHelpers.h"
 #include <combaseapi.h>
 #elif defined(__ANDROID__)
 #endif

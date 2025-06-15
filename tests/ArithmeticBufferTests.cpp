@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "ArithmeticBuffer.h"
+#include "Buffers/ArithmeticBuffer.h"
 
 using namespace Heph;
 using test_data_t = double;
