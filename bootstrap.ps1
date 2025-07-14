@@ -22,13 +22,14 @@ param (
     [switch]$BuildTests,
     [switch]$BuildDocs,
     
-    [switch]$Shared,
     [switch]$Static,
+    [switch]$Shared,
 
-    [switch]$Verbose
+    [switch]$Verbose,
+    [switch]$Help
 )
 
-[string]$CacheFilePath = ".configure_cache"
+[string]$CacheFilePath = ".bootstrap_cache"
 
 [string]$CMakeOptions = ""
 [string]$BuildType = ""
@@ -75,6 +76,64 @@ if ($Verbose)
 
 # ----------------------------------------
 # END PARAMS
+# ----------------------------------------
+
+# ----------------------------------------
+# HELP
+# ----------------------------------------
+
+if ($Help)
+{
+    Write-Host "Usage:" -ForegroundColor Cyan
+    Write-Host "  ./bootstrap [OPTIONS]" -ForegroundColor $InfoColor
+    Write-Host ""
+
+    Write-Host "Options:" -ForegroundColor Cyan
+
+    Write-Host "  -OutputDir <path>     " -NoNewline; Write-Host "Specify the output directory for the build (default: 'build')" -ForegroundColor $InfoColor
+    Write-Host "  -CompilerDir <path>   " -NoNewline; Write-Host "Path to the custom compiler toolchain" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -gcc                  " -NoNewline; Write-Host "Use GCC as the compiler" -ForegroundColor $InfoColor
+    Write-Host "  -clang                " -NoNewline; Write-Host "Use Clang as the compiler" -ForegroundColor $InfoColor
+    Write-Host "  -msvc                 " -NoNewline; Write-Host "Use MSVC as the compiler" -ForegroundColor $InfoColor
+    Write-Host "  -Generator <string>   " -NoNewline; Write-Host "Specify the CMake generator (e.g., 'Ninja', 'Unix Makefiles', 'Visual Studio 17 2022')" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -Debug                " -NoNewline; Write-Host "Configure the project in Debug mode" -ForegroundColor $InfoColor
+    Write-Host "  -Release              " -NoNewline; Write-Host "Configure the project in Release mode" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -Rebuild              " -NoNewline; Write-Host "Delete the output directory and perform a clean rebuild" -ForegroundColor $InfoColor
+    Write-Host "  -Clean                " -NoNewline; Write-Host "Delete the output directory and exit" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -CleanCache           " -NoNewline; Write-Host "Delete the cache file" -ForegroundColor $InfoColor
+    Write-Host "  -NoCache              " -NoNewline; Write-Host "Ignore cache file for this run" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -BuildTests           " -NoNewline; Write-Host "Build the unit tests" -ForegroundColor $InfoColor
+    Write-Host "  -BuildDocs            " -NoNewline; Write-Host "Build the documentation" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -Shared               " -NoNewline; Write-Host "Build shared libraries" -ForegroundColor $InfoColor
+    Write-Host "  -Static               " -NoNewline; Write-Host "Build static libraries" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -Verbose              " -NoNewline; Write-Host "Show detailed output" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "Examples:" -ForegroundColor Cyan
+    Write-Host "  ./bootstrap -BuildDocs" -ForegroundColor DarkGray
+    Write-Host "  ./bootstrap -Rebuild -BuildTests -Verbose" -ForegroundColor DarkGray
+    Write-Host "  ./bootstrap -msvc -Release -BuildTests" -ForegroundColor DarkGray
+    Write-Host ""
+
+    exit 0
+}
+
+# ----------------------------------------
+# END HELP
 # ----------------------------------------
 
 # ----------------------------------------
@@ -363,8 +422,8 @@ Write-Host "[Heph] Configuring cmake." -ForegroundColor $InfoColor
 Write-Verbose "Running command: 'cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType $CMakeOptions'"
 cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" $($CMakeOptions -split " ")
 
-Write-Verbose "Running command: 'cmake --build $OutputDir --config $BuildType -- -j$([Environment]::ProcessorCount)"
-cmake --build "$OutputDir" --config $BuildType -- "-j$([Environment]::ProcessorCount)"
+Write-Verbose "Running command: 'cmake --build $OutputDir --config $BuildType"
+cmake --build "$OutputDir" --config $BuildType
 
 Write-Host "[Heph] Build files have been written to `"$OutputDir`"" -ForegroundColor $SuccessColor
 
