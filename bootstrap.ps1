@@ -59,13 +59,13 @@ param (
 
 if ($Debug -and $Release)
 {
-    Write-Host "[Heph] You cannot specify more than one build type." -ForegroundColor $ErrorColor
+    Write-Host "You cannot specify more than one build type" -ForegroundColor $ErrorColor
     exit 1
 }
 
 if ((@($gcc, $msvc, $clang) | Where-Object { $_ }).Count -gt 1)
 {
-    Write-Host "[Heph] You cannot specify more than one compiler option." -ForegroundColor $ErrorColor
+    Write-Host "You cannot specify more than one compiler option" -ForegroundColor $ErrorColor
     exit 1
 }
 
@@ -142,7 +142,7 @@ if ($Help)
 
 if ($Clean -or $Rebuild)
 {
-    Write-Host "[Heph] Cleaning." -ForegroundColor $InfoColor
+    Write-Host "Cleaning" -ForegroundColor $InfoColor
     
     if (Test-Path $OutputDir)
     {
@@ -150,19 +150,19 @@ if ($Clean -or $Rebuild)
 
         if (Test-Path $OutputDir)
         {
-            Write-Host "[Heph] Failed to remove the output directory, continuing the build." -ForegroundColor $WarningColor
+            Write-Host "Failed to remove the output directory, continuing the build" -ForegroundColor $WarningColor
         }
     }
 }
 
 if ($CleanCache -and (Test-Path $CacheFilePath))
 {
-    Write-Host "[Heph] Removing the cache file." -ForegroundColor $InfoColor
+    Write-Host "Removing the cache file" -ForegroundColor $InfoColor
     Remove-Item $CacheFilePath -Force
 
     if (Test-Path $CacheFilePath)
     {
-        Write-Host "[Heph] Failed to remove the cache file." -ForegroundColor $ErrorColor
+        Write-Host "Failed to remove the cache file" -ForegroundColor $ErrorColor
         exit 1
     }
 }
@@ -182,7 +182,7 @@ if ($Clean)
 
 if (-not $NoCache -and -not $CleanCache)
 {
-    Write-Host "[Heph] Restoring options from the cache file." -ForegroundColor $InfoColor
+    Write-Host "Restoring options from the cache file" -ForegroundColor $InfoColor
 
     if (Test-Path $CacheFilePath)
     {
@@ -259,18 +259,18 @@ if (-not $NoCache -and -not $CleanCache)
 # CREATE DIRECTORIES
 # ----------------------------------------
 
-Write-Host "[Heph] Building." -ForegroundColor $InfoColor
-Write-Host "[Heph] Checking for the output directory." -ForegroundColor $InfoColor
+Write-Host "Building" -ForegroundColor $InfoColor
+Write-Host "Checking for the output directory" -ForegroundColor $InfoColor
 
 
 if (-not (Test-Path $OutputDir))
 {
-    Write-Host "[Heph] Creating the output directory." -ForegroundColor $InfoColor    
+    Write-Host "Creating the output directory" -ForegroundColor $InfoColor    
     New-Item -ItemType Directory -Path $OutputDir | Out-Null
 
     if (!(Test-Path $OutputDir))
     {
-        Write-Host "[Heph] Failed to create the output directory." -ForegroundColor $ErrorColor
+        Write-Host "Failed to create the output directory" -ForegroundColor $ErrorColor
         exit 1
     }
 }
@@ -381,7 +381,7 @@ $CMakeOptions = $CMakeOptions.Trim()
 
 if (-not $NoCache)
 {
-    Write-Host "[Heph] Updating the cache." -ForegroundColor $InfoColor
+    Write-Host "Updating the cache" -ForegroundColor $InfoColor
 
     if (-not (Test-Path $CacheFilePath))
     {
@@ -390,7 +390,7 @@ if (-not $NoCache)
 
     if (-not (Test-Path $CacheFilePath))
     {
-        Write-Host "[Heph] Failed to create the cache file." -ForegroundColor $WarningColor
+        Write-Host "Failed to create the cache file" -ForegroundColor $WarningColor
     }
     else 
     {
@@ -417,7 +417,7 @@ if (-not $NoCache)
 # BUILD
 # ----------------------------------------
 
-Write-Host "[Heph] Configuring cmake." -ForegroundColor $InfoColor
+Write-Host "Configuring cmake" -ForegroundColor $InfoColor
 
 Write-Verbose "Running command: 'cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType $CMakeOptions'"
 cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" $($CMakeOptions -split " ")
@@ -425,7 +425,7 @@ cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" $($CMakeOptions -spli
 Write-Verbose "Running command: 'cmake --build $OutputDir --config $BuildType"
 cmake --build "$OutputDir" --config $BuildType
 
-Write-Host "[Heph] Build files have been written to `"$OutputDir`"" -ForegroundColor $SuccessColor
+Write-Host "Build files have been written to `"$OutputDir`"" -ForegroundColor $SuccessColor
 
 # ----------------------------------------
 # END BUILD
