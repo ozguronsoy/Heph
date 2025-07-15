@@ -8,26 +8,20 @@ namespace Heph
 	{
 	}
 
-	void Event::operator()(EventArgs* pArgs, EventResult* pResult) const
+	void Event::operator()(const EventArgs* pArgs, EventResult* pResult) const
 	{
 		this->Invoke(pArgs, pResult);
 	}
 
-	Event& Event::operator=(EventHandler handler)
+	Event& Event::operator=(Handler handler)
 	{
 		this->SetHandler(handler);
 		return *this;
 	}
 
-	Event& Event::operator+=(EventHandler handler)
+	Event& Event::operator+=(Handler handler)
 	{
 		this->AddHandler(handler);
-		return *this;
-	}
-
-	Event& Event::operator-=(EventHandler handler)
-	{
-		this->RemoveHandler(handler);
 		return *this;
 	}
 
@@ -36,63 +30,37 @@ namespace Heph
 		return this->eventHandlers.size();
 	}
 
-	bool Event::HandlerExists(EventHandler handler) const
-	{
-		for (EventHandler h : this->eventHandlers)
-			if (h == handler)
-				return true;
-		return false;
-	}
-
-	EventHandler Event::GetHandler(size_t index) const
-	{
-		if (index >= this->eventHandlers.size())
-		{
-			HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of range.");
-		}
-		return this->eventHandlers[index];
-	}
-	void Event::SetHandler(EventHandler handler)
+	void Event::SetHandler(Handler handler)
 	{
 		this->eventHandlers.clear();
 		this->AddHandler(handler);
 	}
-	void Event::AddHandler(EventHandler handler)
+
+	void Event::AddHandler(Handler handler)
 	{
-		if (handler != nullptr)
+		if (handler)
 			this->eventHandlers.push_back(handler);
 	}
 
-	void Event::RemoveHandler(EventHandler handler)
-	{
-		for (size_t i = 0; i < this->eventHandlers.size(); i++)
-		{
-			if (this->eventHandlers[i] == handler)
-			{
-				this->eventHandlers.erase(this->eventHandlers.begin() + i);
-				return;
-			}
-		}
-	}
-
-	void Event::ClearHandlers()
+	void Event::Clear()
 	{
 		this->eventHandlers.clear();
 	}
 
-	void Event::Invoke(EventArgs* pArgs, EventResult* pResult) const
+	void Event::Invoke(const EventArgs* pArgs, EventResult* pResult) const
 	{
-		EventArgs defaultArgs;
+		const EventArgs defaultArgs;
 		EventResult defaultResult;
 
-		EventParams eventParams(this->userArgs);
-		eventParams.pArgs = (pArgs != nullptr) ? (pArgs) : (&defaultArgs);
-		eventParams.pResult = (pResult != nullptr) ? (pResult) : (&defaultResult);
+		EventParams eventParams(
+			((pArgs != nullptr) ? (*pArgs) : (defaultArgs)),
+			((pResult != nullptr) ? (*pResult) : (defaultResult))
+		);
 
-		for (EventHandler handler : this->eventHandlers)
+		for (Handler handler : this->eventHandlers)
 		{
 			handler(eventParams);
-			if (eventParams.pResult->isHandled) return;
+			if (eventParams.Result<EventResult>().isHandled) return;
 		}
 	}
 }

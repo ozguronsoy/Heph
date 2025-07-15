@@ -5,15 +5,8 @@
 
 using namespace Heph;
 
-class EventTest : public testing::Test
+struct EventTest : public testing::Test
 {
-protected:
-	static constexpr const char* THIS_KEY = "this";
-	static constexpr const char* PARAM1_KEY = "param1";
-	static constexpr const char* PARAM2_KEY = "param2";
-	static constexpr const char* PARAM3_KEY = "param3";
-
-protected:
 	Event event;
 
 	std::string param1;
@@ -25,10 +18,6 @@ protected:
 	bool handler3;
 	bool handler4;
 
-	EventArgs* pArgs;
-	EventResult* pResult;
-
-protected:
 	EventTest()
 	{
 		handler1 = false;
@@ -39,46 +28,27 @@ protected:
 		param1 = "Hello World!";
 		param2 = 37;
 		param3 = std::complex<double>(10, 20);
-
-		pArgs = nullptr;
-		pResult = nullptr;
 	}
 
-	static void Handler1(const EventParams& params)
+	void Handler1(EventParams& params)
 	{
-		EventTest* pThis = (EventTest*)params.userArgs.at(THIS_KEY);
-
-		EXPECT_TRUE(pThis != nullptr);
-		EXPECT_TRUE(params.userArgs.find(THIS_KEY) != params.userArgs.end());
-		EXPECT_EQ(params.userArgs.at(PARAM1_KEY), &pThis->param1);
-		EXPECT_EQ(params.userArgs.at(PARAM2_KEY), &pThis->param2);
-		EXPECT_EQ(params.userArgs.at(PARAM3_KEY), &pThis->param3);
-		EXPECT_TRUE(params.userArgs.find("DOES NOT EXIST") == params.userArgs.end());
-
-		pThis->handler1 = true;
+		this->handler1 = true;
 	}
 
-	static void Handler2(const EventParams& params)
+	void Handler2(EventParams& params)
 	{
-		EventTest* pThis = (EventTest*)params.userArgs.at(THIS_KEY);
-		pThis->handler2 = true;
-		params.pResult->isHandled = true;
+		this->handler2 = true;
+		params.Result<EventResult>().isHandled = true;
 	}
 
-	static void Handler3(const EventParams& params)
+	void Handler3(EventParams& params)
 	{
-		EventTest* pThis = (EventTest*)params.userArgs.at(THIS_KEY);
-		pThis->handler3 = true;
+		this->handler3 = true;
 	}
 
-	static void Handler4(const EventParams& params)
+	void Handler4(EventParams& params)
 	{
-		EventTest* pThis = (EventTest*)params.userArgs.at(THIS_KEY);
-
-		EXPECT_EQ(params.pArgs, pThis->pArgs);
-		EXPECT_EQ(params.pResult, pThis->pResult);
-
-		pThis->handler4 = true;
+		this->handler4 = true;
 	}
 };
 
@@ -86,80 +56,56 @@ TEST_F(EventTest, HandlerMethods)
 {
 	EXPECT_EQ(event.Size(), 0);
 
-	event = &Handler1;
+	event = std::bind(&EventTest::Handler1, this, std::placeholders::_1);
 	EXPECT_EQ(event.Size(), 1);
-	EXPECT_TRUE(event.HandlerExists(&Handler1));
-	EXPECT_FALSE(event.HandlerExists(&Handler2));
 
-	event = &Handler2;
+	event = std::bind(&EventTest::Handler2, this, std::placeholders::_1);
 	EXPECT_EQ(event.Size(), 1);
-	EXPECT_TRUE(event.HandlerExists(&Handler2));
-	EXPECT_FALSE(event.HandlerExists(&Handler1));
 
-	event.SetHandler(&Handler3);
+	event.SetHandler(std::bind(&EventTest::Handler3, this, std::placeholders::_1));
 	EXPECT_EQ(event.Size(), 1);
-	EXPECT_TRUE(event.HandlerExists(&Handler3));
-	EXPECT_FALSE(event.HandlerExists(&Handler1));
-	EXPECT_FALSE(event.HandlerExists(&Handler2));
 
-	event += &Handler1;
-	event.AddHandler(&Handler2);
+	event += std::bind(&EventTest::Handler1, this, std::placeholders::_1);
+	event.AddHandler(std::bind(&EventTest::Handler2, this, std::placeholders::_1));
 	EXPECT_EQ(event.Size(), 3);
-	EXPECT_TRUE(event.HandlerExists(&Handler1));
-	EXPECT_TRUE(event.HandlerExists(&Handler2));
-	EXPECT_TRUE(event.HandlerExists(&Handler3));
-	EXPECT_EQ(event.GetHandler(0), &Handler3);
-	EXPECT_EQ(event.GetHandler(1), &Handler1);
-	EXPECT_EQ(event.GetHandler(2), &Handler2);
 
-	event.ClearHandlers();
+	event.Clear();
 	EXPECT_EQ(event.Size(), 0);
 }
 
 TEST_F(EventTest, Invoke)
 {
-	event = &Handler1;
-	event += &Handler2;
-	event += &Handler3;
-	event += &Handler4;
+	{
+		event = std::bind(&EventTest::Handler1, this, std::placeholders::_1);
+		event += std::bind(&EventTest::Handler2, this, std::placeholders::_1);
+		event += std::bind(&EventTest::Handler3, this, std::placeholders::_1);
+		event += std::bind(&EventTest::Handler4, this, std::placeholders::_1);
 
-	EXPECT_EQ(event.userArgs.size(), 0);
-	event.userArgs[THIS_KEY] = this;
-	event.userArgs[PARAM1_KEY] = &param1;
-	event.userArgs[PARAM2_KEY] = &param2;
-	event.userArgs[PARAM3_KEY] = &param3;
-	EXPECT_EQ(event.userArgs.size(), 4);
+		event.Invoke(nullptr, nullptr);
 
-	event.userArgs.erase(PARAM3_KEY);
-	EXPECT_EQ(event.userArgs.size(), 3);
-	EXPECT_TRUE(event.userArgs.find(PARAM3_KEY) == event.userArgs.end());
-	event.userArgs[PARAM3_KEY] = &param3;
+		EXPECT_TRUE(handler1);
+		EXPECT_TRUE(handler2);
+		EXPECT_FALSE(handler3);
+		EXPECT_FALSE(handler4);
+	}
 
-	event.Invoke(nullptr, nullptr);
+	{
+		handler1 = false;
+		handler2 = false;
+		handler3 = false;
+		handler4 = false;
 
-	EXPECT_TRUE(handler1);
-	EXPECT_TRUE(handler2);
-	EXPECT_FALSE(handler3);
-	EXPECT_FALSE(handler4);
+		event = std::bind(&EventTest::Handler1, this, std::placeholders::_1);
+		event += std::bind(&EventTest::Handler3, this, std::placeholders::_1);
+		event += std::bind(&EventTest::Handler4, this, std::placeholders::_1);
 
-	handler1 = false;
-	handler2 = false;
-	handler3 = false;
-	handler4 = false;
+		EventArgs args;
+		EventResult result;
+		event.Invoke(&args, &result);
 
-	event.RemoveHandler(&Handler2);
-	event.RemoveHandler(&Handler3);
-
-	EventArgs args;
-	EventResult result;
-
-	pArgs = &args;
-	pResult = &result;
-
-	event(&args, &result);
-
-	EXPECT_TRUE(handler1);
-	EXPECT_FALSE(handler2);
-	EXPECT_FALSE(handler3);
-	EXPECT_TRUE(handler4);
+		EXPECT_TRUE(handler1);
+		EXPECT_FALSE(handler2);
+		EXPECT_TRUE(handler3);
+		EXPECT_TRUE(handler4);
+	}
 }

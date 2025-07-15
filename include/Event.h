@@ -4,79 +4,53 @@
 #include "HephShared.h"
 #include "EventParams.h"
 #include <vector>
-#include <cinttypes>
+#include <cstdint>
+#include <functional>
 
 /** @file */
 
 namespace Heph
 {
-	/** Method for handling events. */
-	typedef void (*EventHandler)(const EventParams& eventParams);
-
 	/** @brief Class for managing callback functions. */
 	class HEPH_API Event final
 	{
-	private:
-		std::vector<EventHandler> eventHandlers;
-
 	public:
-		/**
-		 * @brief Stores custom data to the event handlers as key/value pairs.
-		 * 
-		 * @important This variable only stores the pointers to the arguments, 
-		 * thus you have to ensure that the arguments still exist when handling the events.
-		 */
-		UserEventArgs userArgs;
+		/** Function for handling events. */
+		using Handler = std::function<void(EventParams&)>;
+
+	private:
+		std::vector<Handler> eventHandlers;
 
 	public:
 		/** @copydoc default_constructor */
 		Event();
 
-		/** @copydoc Invoke(EventArgs*, EventResult*) const */
-		void operator()(EventArgs* pArgs, EventResult* pResult) const;
-		/** @copydoc SetHandler(EventHandler) */
-		Event& operator=(EventHandler handler);
-		/** @copydoc AddHandler(EventHandler) */
-		Event& operator+=(EventHandler handler);
-		/** @copydoc RemoveHandler(EventHandler) */
-		Event& operator-=(EventHandler handler);
+		/** @copydoc Invoke(const EventArgs*, EventResult*) const */
+		void operator()(const EventArgs* pArgs, EventResult* pResult) const;
+		/** @copydoc SetHandler(Handler) */
+		Event& operator=(Handler handler);
+		/** @copydoc AddHandler(Handler) */
+		Event& operator+=(Handler handler);
 
 		/** Gets the number of event handlers. */
 		size_t Size() const;
 
-		/**
-		 * Checks whether the provided event handler is registered.
-		 *
-		 * @return true if event handler exists, otherwise false.
-		 */
-		bool HandlerExists(EventHandler handler) const;
-
-		/** 
-		 * Gets the event handler at the provided index. 
-		 * 
-		 * @exception InvalidArgumentException
-		 */
-		EventHandler GetHandler(size_t index) const;
-
 		/** Removes all the event handlers than adds the provided one. */
-		void SetHandler(EventHandler handler);
+		void SetHandler(Handler handler);
 
 		/** Adds the event handler. */
-		void AddHandler(EventHandler handler);
-
-		/** Removes the event handler. */
-		void RemoveHandler(EventHandler handler);
+		void AddHandler(Handler handler);
 
 		/** Removes all event handlers. */
-		void ClearHandlers();
+		void Clear();
 
 		/**
 		 * Raises the event.
 		 *
-		 * @param pArgs Pointer to the event args or nullptr.
-		 * @param pResult Pointer to the event result or nullptr.
+		 * @param args Event args or ``std::nullopt``.
+		 * @param result Event result or ``std::nullopt``.
 		 */
-		void Invoke(EventArgs* pArgs, EventResult* pResult) const;
+		void Invoke(const EventArgs* pArgs, EventResult* pResult) const;
 	};
 }
 

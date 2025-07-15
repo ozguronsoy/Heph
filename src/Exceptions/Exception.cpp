@@ -62,10 +62,10 @@ namespace Heph
         Exception::ExceptionListInstance().clear();
     }
 
-    void Exception::DefaultHandler(const EventParams& params)
+    void Exception::DefaultHandler(EventParams& params)
     {
         std::ostringstream oss;
-        oss << ((ExceptionEventArgs*)params.pArgs)->exception << std::endl;
+        oss << params.Args<ExceptionEventArgs>().exception << std::endl;
         ConsoleLogger::LogError(oss.str());
     }
 

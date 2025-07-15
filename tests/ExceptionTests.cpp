@@ -16,22 +16,21 @@ protected:
 	ExceptionTest()
 	{
         Exception::ClearExceptions();
-        Exception::ExceptionEvent.userArgs.clear();
-		Exception::ExceptionEvent.ClearHandlers();
+		Exception::ExceptionEvent.Clear();
 	}
 
-	static void Handler1(const EventParams& params)
+	static void Handler1(EventParams& params)
 	{
-		ExceptionEventArgs* pArgs = dynamic_cast<ExceptionEventArgs*>(params.pArgs);
-		EXPECT_TRUE((&pArgs->exception) != nullptr);
-		EXPECT_EQ(pArgs->exception.Method(), ExceptionTest::METHOD);
-		EXPECT_EQ(pArgs->exception.Message(), ExceptionTest::MESSAGE);
+		const ExceptionEventArgs& args = params.Args<ExceptionEventArgs>();
+		EXPECT_TRUE((&args.exception) != nullptr);
+		EXPECT_EQ(args.exception.Method(), ExceptionTest::METHOD);
+		EXPECT_EQ(args.exception.Message(), ExceptionTest::MESSAGE);
 	}
 
-	static void Handler2(const EventParams& params)
+	static void Handler2(EventParams& params)
 	{
-		ExceptionEventArgs* pArgs = (ExceptionEventArgs*)params.pArgs;
-		CHECK_EX_TYPE(&pArgs->exception, InvalidArgumentException);
+		const ExceptionEventArgs& args = params.Args<ExceptionEventArgs>();
+		CHECK_EX_TYPE(&args.exception, InvalidArgumentException);
 	}
 
 	static void TestThread()

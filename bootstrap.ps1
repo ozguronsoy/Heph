@@ -9,7 +9,7 @@ param (
     [switch]$gcc,
     [switch]$clang,
     [switch]$msvc,
-    [string]$Generator = "",
+    [string]$Generator = "default",
     
     [switch]$Debug,
     [switch]$Release,
@@ -42,14 +42,6 @@ param (
                            "gcc",
                            "msvc",
                            "clang"
-                    )
-
-
-[string[]]$Generators = @(
-                            "Ninja",
-                            "Unix Makefiles",
-                            "Visual Studio 17 2022",
-                            "MinGW Makefiles"
                     )
 
 [ConsoleColor]$InfoColor = "Gray"
@@ -137,23 +129,8 @@ if ($Help)
 # ----------------------------------------
 
 # ----------------------------------------
-# CLEAN
+# RESOTRE CACHE
 # ----------------------------------------
-
-if ($Clean -or $Rebuild)
-{
-    Write-Host "Cleaning" -ForegroundColor $InfoColor
-    
-    if (Test-Path $OutputDir)
-    {
-        Remove-Item -Path $OutputDir -Recurse -Force
-
-        if (Test-Path $OutputDir)
-        {
-            Write-Host "Failed to remove the output directory, continuing the build" -ForegroundColor $WarningColor
-        }
-    }
-}
 
 if ($CleanCache -and (Test-Path $CacheFilePath))
 {
@@ -166,19 +143,6 @@ if ($CleanCache -and (Test-Path $CacheFilePath))
         exit 1
     }
 }
-
-if ($Clean)
-{
-    exit 0
-}
-
-# ----------------------------------------
-# END CLEAN
-# ----------------------------------------
-
-# ----------------------------------------
-# RESOTRE CACHE
-# ----------------------------------------
 
 if (-not $NoCache -and -not $CleanCache)
 {
@@ -209,9 +173,26 @@ if (-not $NoCache -and -not $CleanCache)
             $CompilerDir = $CacheMap["CompilerDir"]
         }
 
-        if ($CacheMap.ContainsKey("Compiler") -and -not $gcc -and -not $clang -and -not $msvc)
+        if ($CacheMap.ContainsKey("Compiler"))
         {
             $Compiler = $CacheMap["Compiler"]
+
+            if ($Compiler -eq "default" -and ($gcc -or $clang -or $msvc))
+            {
+                $Rebuild = $true
+            }
+            elseif ($Compiler -eq "gcc" -and ($clang -or $msvc))
+            {
+                $Rebuild = $true
+            }
+            elseif ($Compiler -eq "clang" -and ($gcc -or $msvc))
+            {
+                $Rebuild = $true
+            }
+            elseif ($Compiler -eq "msvc" -and ($gcc -or $clang))
+            {
+                $Rebuild = $true
+            }
         }
 
         if ($CacheMap.ContainsKey("Generator") -and -not $PSBoundParameters.ContainsKey("Generator"))
@@ -228,31 +209,39 @@ if (-not $NoCache -and -not $CleanCache)
                 $Rebuild = $true
             }
         }
-
-        if ($CacheMap.ContainsKey("BuildTests") -and -not $PSBoundParameters.ContainsKey("BuildTests"))
-        {
-            $BuildTests = if ($CacheMap["BuildTests"] -eq "true") { $true } else { $false }
-        }
-
-        if ($CacheMap.ContainsKey("BuildDocs") -and -not $PSBoundParameters.ContainsKey("BuildDocs"))
-        {
-            $BuildDocs = if ($CacheMap["BuildDocs"] -eq "true") { $true } else { $false }
-        }
-
-        if ($CacheMap.ContainsKey("Static") -and -not $PSBoundParameters.ContainsKey("Static"))
-        {
-            $Static = if ($CacheMap["Static"] -eq "true") { $true } else { $false }
-        }
-
-        if ($CacheMap.ContainsKey("Shared") -and -not $PSBoundParameters.ContainsKey("Shared"))
-        {
-            $Shared = if ($CacheMap["Shared"] -eq "true") { $true } else { $false }
-        }
     }
 }
 
 # ----------------------------------------
 # END RESOTRE CACHE
+# ----------------------------------------
+
+# ----------------------------------------
+# CLEAN
+# ----------------------------------------
+
+if ($Clean -or $Rebuild)
+{
+    Write-Host "Cleaning" -ForegroundColor $InfoColor
+    
+    if (Test-Path $OutputDir)
+    {
+        Remove-Item -Path $OutputDir -Recurse -Force
+
+        if (Test-Path $OutputDir)
+        {
+            Write-Host "Failed to remove the output directory, continuing the build" -ForegroundColor $WarningColor
+        }
+    }
+
+    if ($Clean)
+    {
+        exit 0
+    }
+}
+
+# ----------------------------------------
+# END CLEAN
 # ----------------------------------------
 
 # ----------------------------------------
@@ -289,10 +278,18 @@ if ($gcc)
     $C_Compiler = if ($CompilerDir -ne "") { Join-Path $CompilerDir "gcc" } else { "gcc" }
     $Cpp_Compiler = if ($CompilerDir -ne "") { Join-Path $CompilerDir "g++" } else { "g++" }
 
-    if (-not ($Generators -contains $Generator))
+    $SupportedGenerators = @(
+                                "Ninja",
+                                "Unix Makefiles",
+                                "MinGW Makefiles"
+                        )
+
+    if (-not ($SupportedGenerators -contains $Generator))
     {
         $Generator = "Ninja"
     }
+ 
+    $CMakeOptions += "-G `"$Generator`" "
 }
 
 if ($clang)
@@ -300,11 +297,19 @@ if ($clang)
     $Compiler = "clang"
     $C_Compiler = if ($CompilerDir -ne "") { Join-Path $CompilerDir "clang" } else { "clang" }
     $Cpp_Compiler = if ($CompilerDir -ne "") { Join-Path $CompilerDir "clang++" } else { "clang++" }
+
+    $SupportedGenerators = @(
+                                "Ninja",
+                                "Unix Makefiles",
+                                "MinGW Makefiles"
+                    )
     
-    if (-not ($Generators -contains $Generator))
+    if (-not ($SupportedGenerators -contains $Generator))
     {
         $Generator = "Ninja"
     }
+
+    $CMakeOptions += "-G `"$Generator`" "
 }
 
 if ($msvc)
@@ -312,20 +317,17 @@ if ($msvc)
     $Compiler = "msvc"
     $C_Compiler = if ($CompilerDir -ne "") { Join-Path $CompilerDir "cl" } else { "cl" }
     $Cpp_Compiler = if ($CompilerDir -ne "") { Join-Path $CompilerDir "cl" } else { "cl" }
+
+    $SupportedGenerators = @(
+                                "Visual Studio 17 2022"
+                    )
     
-    if (-not ($Generators -contains $Generator))
+    if (-not ($SupportedGenerators -contains $Generator))
     {
         $Generator = "Visual Studio 17 2022"
     }
-}
 
-if ($Generators -contains $Generator)
-{
     $CMakeOptions += "-G `"$Generator`" "
-}
-else 
-{
-    $Generator = "default"    
 }
 
 if ($Compilers -contains $Compiler)
@@ -400,10 +402,6 @@ if (-not $NoCache)
         $Cache += "Compiler=$Compiler`n"
         $Cache += "Generator=$Generator`n"
         $Cache += "BuildType=$BuildType`n"
-        $Cache += "BuildTests=$($BuildTests.ToString().ToLower())`n"
-        $Cache += "BuildDocs=$($BuildDocs.ToString().ToLower())`n"
-        $Cache += "Static=$($Static.ToString().ToLower())`n"
-        $Cache += "Shared=$($Shared.ToString().ToLower())`n"
 
         $Cache | Set-Content -Path $CacheFilePath -Encoding UTF8
     }
@@ -422,8 +420,18 @@ Write-Host "Configuring cmake" -ForegroundColor $InfoColor
 Write-Verbose "Running command: 'cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType $CMakeOptions'"
 cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" $($CMakeOptions -split " ")
 
+if ($LASTEXITCODE -ne 0)
+{
+    exit $LASTEXITCODE
+}
+
 Write-Verbose "Running command: 'cmake --build $OutputDir --config $BuildType"
 cmake --build "$OutputDir" --config $BuildType
+
+if ($LASTEXITCODE -ne 0)
+{
+    exit $LASTEXITCODE
+}
 
 Write-Host "Build files have been written to `"$OutputDir`"" -ForegroundColor $SuccessColor
 

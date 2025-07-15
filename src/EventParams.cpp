@@ -2,8 +2,8 @@
 
 namespace Heph
 {
-    EventParams::EventParams(const UserEventArgs& userArgs)
-        : pArgs(nullptr), pResult(nullptr), userArgs(userArgs)
+    EventParams::EventParams(const EventArgs& args, EventResult& result)
+        : args(args), result(result)
     {
     }
 }

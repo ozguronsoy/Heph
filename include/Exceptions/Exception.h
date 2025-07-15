@@ -90,7 +90,7 @@ namespace Heph
         static void ClearExceptions() noexcept;
 
         /** Default handler for the OnException event. */
-        static void DefaultHandler(const EventParams& params);
+        static void DefaultHandler(EventParams& params);
 
     protected:
         /** Gets the thread_local exception list instance. */

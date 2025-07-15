@@ -7,7 +7,7 @@
 # passed by the user
 OutputDir="build"
 CompilerDir=""
-Generator=""
+Generator="default"
 
 gcc=false
 clang=false
@@ -240,20 +240,8 @@ fi
 # ----------------------------------------
 
 # ----------------------------------------
-# CLEAN
+# RESTORE CACHE
 # ----------------------------------------
-
-if [ "$Clean" = true ] || [ "$Rebuild" = true ]; then
-    echo "Cleaning"
-
-    if [ -d "$OutputDir" ]; then
-        rm -rf "$OutputDir"
-
-        if [ -d "$OutputDir" ]; then
-            echo "Failed to remove the output directory, continuing the build"
-        fi
-    fi
-fi
 
 if [ "$CleanCache" = true ] && [ -f "$CacheFilePath" ]; then
     echo "Removing the cache file"
@@ -264,18 +252,6 @@ if [ "$CleanCache" = true ] && [ -f "$CacheFilePath" ]; then
         exit 1
     fi
 fi
-
-if [ "$Clean" = true ]; then
-    exit 0
-fi
-
-# ----------------------------------------
-# END CLEAN
-# ----------------------------------------
-
-# ----------------------------------------
-# RESTORE CACHE
-# ----------------------------------------
 
 if [ "$NoCache" != true ] && [ "$CleanCache" != true ]; then
     echo "Restoring options from the cache file"
@@ -308,8 +284,16 @@ if [ "$NoCache" != true ] && [ "$CleanCache" != true ]; then
             CompilerDir="${CacheMap[CompilerDir]}"
         fi
 
-        if [[ -n "${CacheMap[Compiler]}" ]] && [ "$gcc" != true ] && [ "$clang" != true ]; then
+        if [[ -n "${CacheMap[Compiler]}" ]]; then
             Compiler="${CacheMap[Compiler]}"
+        
+            if [[ "$Compiler" == "default" && ( "$gcc" == true || "$clang" == true ) ]]; then
+                Rebuild=true
+            elif [[ "$Compiler" == "gcc" && "$clang" == true ]]; then
+                Rebuild=true
+            elif [[ "$Compiler" == "clang" && "$gcc" == true ]]; then
+                Rebuild=true
+            fi
         fi
 
         if [[ -n "${CacheMap[Generator]}" ]] && ! param_set Generator; then
@@ -324,36 +308,35 @@ if [ "$NoCache" != true ] && [ "$CleanCache" != true ]; then
             fi
         fi
 
-        # helper to convert string "true"/"false" to bash booleans
-        str_to_bool() {
-            if [ "$1" = "true" ]; then
-                echo true
-            else
-                echo false
-            fi
-        }
-
-        if [[ -n "${CacheMap[BuildTests]}" ]] && ! param_set BuildTests; then
-            BuildTests=$(str_to_bool "${CacheMap[BuildTests]}")
-        fi
-
-        if [[ -n "${CacheMap[BuildDocs]}" ]] && ! param_set BuildDocs; then
-            BuildDocs=$(str_to_bool "${CacheMap[BuildDocs]}")
-        fi
-
-        if [[ -n "${CacheMap[Static]}" ]] && ! param_set Static; then
-            Static=$(str_to_bool "${CacheMap[Static]}")
-        fi
-
-        if [[ -n "${CacheMap[Shared]}" ]] && ! param_set Shared; then
-            Shared=$(str_to_bool "${CacheMap[Shared]}")
-        fi
-
     fi
 fi
 
 # ----------------------------------------
 # END RESTORE CACHE
+# ----------------------------------------
+
+# ----------------------------------------
+# CLEAN
+# ----------------------------------------
+
+if [ "$Clean" = true ] || [ "$Rebuild" = true ]; then
+    echo "Cleaning"
+
+    if [ -d "$OutputDir" ]; then
+        rm -rf "$OutputDir"
+
+        if [ -d "$OutputDir" ]; then
+            echo "Failed to remove the output directory, continuing the build"
+        fi
+    fi
+
+    if [ "$Clean" = true ]; then
+        exit 0
+    fi
+fi
+
+# ----------------------------------------
+# END CLEAN
 # ----------------------------------------
 
 # ----------------------------------------
@@ -381,40 +364,40 @@ fi
 # CREATE CMAKE PARAMS
 # ----------------------------------------
 
-if [ "$gcc" = true ]; then
+if [[ $gcc == true ]]; then
     Compiler="gcc"
-    if [ -n "$CompilerDir" ]; then
-        C_Compiler="$CompilerDir/gcc"
-        Cpp_Compiler="$CompilerDir/g++"
+    if [[ -n "$CompilerDir" ]]; then
+        C_Compiler="${CompilerDir}/gcc"
+        Cpp_Compiler="${CompilerDir}/g++"
     else
         C_Compiler="gcc"
         Cpp_Compiler="g++"
     fi
 
-    if [[ ! " ${Generators[*]} " =~ " $Generator " ]]; then
-        Generator="Unix Makefiles"
+    SupportedGenerators=("Ninja" "Unix Makefiles")
+    if [[ ! " ${SupportedGenerators[@]} " =~ " ${Generator} " ]]; then
+        Generator="Ninja"
     fi
+
+    CMakeOptions+=" -G \"$Generator\" "
 fi
 
-if [ "$clang" = true ]; then
+if [[ $clang == true ]]; then
     Compiler="clang"
-    if [ -n "$CompilerDir" ]; then
-        C_Compiler="$CompilerDir/clang"
-        Cpp_Compiler="$CompilerDir/clang++"
+    if [[ -n "$CompilerDir" ]]; then
+        C_Compiler="${CompilerDir}/clang"
+        Cpp_Compiler="${CompilerDir}/clang++"
     else
         C_Compiler="clang"
         Cpp_Compiler="clang++"
     fi
 
-    if [[ ! " ${Generators[*]} " =~ " $Generator " ]]; then
-        Generator="Unix Makefiles"
+    SupportedGenerators=("Ninja" "Unix Makefiles")
+    if [[ ! " ${SupportedGenerators[@]} " =~ " ${Generator} " ]]; then
+        Generator="Ninja"
     fi
-fi
 
-if [[ " ${Generators[*]} " =~ " $Generator " ]]; then
-    CMakeOptions+="-G \"$Generator\" "
-else
-    Generator="default"
+    CMakeOptions+=" -G \"$Generator\" "
 fi
 
 if [[ " ${Compilers[*]} " =~ " $Compiler " ]]; then
@@ -473,10 +456,6 @@ if [ "$NoCache" != true ]; then
             echo "Compiler=$Compiler"
             echo "Generator=$Generator"
             echo "BuildType=$BuildType"
-            echo "BuildTests=$( [ "$BuildTests" = true ] && echo true || echo false )"
-            echo "BuildDocs=$( [ "$BuildDocs" = true ] && echo true || echo false )"
-            echo "Static=$( [ "$Static" = true ] && echo true || echo false )"
-            echo "Shared=$( [ "$Shared" = true ] && echo true || echo false )"
         } > "$CacheFilePath"
     fi
 fi
@@ -490,7 +469,15 @@ echo "Configuring cmake"
 echo-verbose "Running command: cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType $CMakeOptions"
 cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" ${CMakeOptions}
 
+if [ $? -ne 0 ]; then
+    exit $?
+fi
+
 echo-verbose "Running command: cmake --build $OutputDir --config $BuildType"
 cmake --build "$OutputDir" --config "$BuildType"
+
+if [ $? -ne 0 ]; then
+    exit $?
+fi
 
 echo "Build files have been written to \"$OutputDir\""

@@ -4,33 +4,49 @@
 #include "HephShared.h"
 #include "EventArgs.h"
 #include "EventResult.h"
-#include <string>
-#include <unordered_map>
+#include <type_traits>
 
 /** @file */
 
 namespace Heph
 {
-	typedef std::unordered_map<std::string, void*> UserEventArgs; 
-
 	/** @brief Stores the information required to handle an event. */
-	struct HEPH_API EventParams final
+	class HEPH_API EventParams final
 	{
-		/** @brief Pointer to the arguments, can be null. */
-		EventArgs* pArgs;
+	private:
+		/** @brief Event arguments. */
+		const EventArgs& args;
 
-		/** @brief Pointer to the result, can be null. */
-		EventResult* pResult;
+		/** @brief Event result. */
+		EventResult& result;
 
-		/** @copydoc Event::userArgs */
-		const UserEventArgs& userArgs;
-		
+	public:
+		/** @copydoc constructor */
+		EventParams(const EventArgs& args, EventResult& result);
+
 		/**
-		 * @copydoc constructor
-		 * 
-		 * @param userArgs @copybrief userArgs
+		 * Gets the event args.
+		 *
+		 * @tparam TArgs Type of the event args
 		 */
-		explicit EventParams(const UserEventArgs& userArgs);
+		template<typename TArgs = EventArgs>
+			requires std::is_base_of_v<EventArgs, TArgs>
+		const TArgs& Args() const
+		{
+			return reinterpret_cast<const TArgs&>(this->args);
+		}
+
+		/**
+		 * Gets the event result.
+		 *
+		 * @tparam TResult Type of the event result
+		 */
+		template<typename TResult = EventResult>
+			requires std::is_base_of_v<EventResult, TResult>
+		TResult& Result()
+		{
+			return reinterpret_cast<TResult&>(this->result);
+		}
 	};
 }
 
