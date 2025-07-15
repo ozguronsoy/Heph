@@ -57,7 +57,7 @@ seen_Help=false
 # used internally by the script
 CacheFilePath=".bootstrap_cache"
 
-CMakeOptions=""
+CMakeOptions=()
 BuildType=""
 
 Compiler=""
@@ -65,7 +65,6 @@ C_Compiler=""
 Cpp_Compiler=""
 
 Compilers=("gcc" "clang")
-Generators=("Ninja" "Unix Makefiles")
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -183,7 +182,7 @@ if [ "$compiler_count" -gt 1 ]; then
     exit 1
 fi
 
-echo_verbose() {
+echo-verbose() {
     if [ "$Verbose" = true ]; then
         echo "VERBOSE: $*"
     fi
@@ -364,7 +363,7 @@ fi
 # CREATE CMAKE PARAMS
 # ----------------------------------------
 
-if [[ $gcc == true ]]; then
+if [[ "$gcc" = true ]]; then
     Compiler="gcc"
     if [[ -n "$CompilerDir" ]]; then
         C_Compiler="${CompilerDir}/gcc"
@@ -376,13 +375,13 @@ if [[ $gcc == true ]]; then
 
     SupportedGenerators=("Ninja" "Unix Makefiles")
     if [[ ! " ${SupportedGenerators[@]} " =~ " ${Generator} " ]]; then
-        Generator="Ninja"
+        Generator="Unix Makefiles"
     fi
 
-    CMakeOptions+=" -G \"$Generator\" "
+    CMakeOptions+=("-G" "$Generator")
 fi
 
-if [[ $clang == true ]]; then
+if [[ "$clang" = true ]]; then
     Compiler="clang"
     if [[ -n "$CompilerDir" ]]; then
         C_Compiler="${CompilerDir}/clang"
@@ -394,14 +393,14 @@ if [[ $clang == true ]]; then
 
     SupportedGenerators=("Ninja" "Unix Makefiles")
     if [[ ! " ${SupportedGenerators[@]} " =~ " ${Generator} " ]]; then
-        Generator="Ninja"
+        Generator="Unix Makefiles"
     fi
 
-    CMakeOptions+=" -G \"$Generator\" "
+    CMakeOptions+=("-G" "$Generator")
 fi
 
 if [[ " ${Compilers[*]} " =~ " $Compiler " ]]; then
-    CMakeOptions+="-DCMAKE_C_COMPILER=\"$C_Compiler\" -DCMAKE_CXX_COMPILER=\"$Cpp_Compiler\" "
+    CMakeOptions+=("-DCMAKE_C_COMPILER=$C_Compiler" "-DCMAKE_CXX_COMPILER=$Cpp_Compiler")
 else
     Compiler="default"
 fi
@@ -415,22 +414,20 @@ if [ -z "$BuildType" ] || { [ "$BuildType" = "Release" ] && [ "$Debug" = true ] 
 fi
 
 if [ "$BuildTests" = true ]; then
-    CMakeOptions+="-DHEPH_BUILD_TESTS=ON "
+    CMakeOptions+=("-DHEPH_BUILD_TESTS=ON")
 fi
 
 if [ "$BuildDocs" = true ]; then
-    CMakeOptions+="-DHEPH_BUILD_DOCS=ON "
+    CMakeOptions+=("-DHEPH_BUILD_DOCS=ON")
 fi
 
 if [ "$Static" = true ]; then
-    CMakeOptions+="-DHEPH_BUILD_STATIC=ON "
+    CMakeOptions+=("-DHEPH_BUILD_STATIC=ON")
 fi
 
 if [ "$Shared" = true ]; then
-    CMakeOptions+="-DHEPH_BUILD_SHARED=ON "
+    CMakeOptions+=("-DHEPH_BUILD_SHARED=ON")
 fi
-
-CMakeOptions="${CMakeOptions%"${CMakeOptions##*[![:space:]]}"}"
 
 # ----------------------------------------
 # END CREATE CMAKE PARAMS
@@ -466,8 +463,8 @@ fi
 
 echo "Configuring cmake"
 
-echo-verbose "Running command: cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType $CMakeOptions"
-cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" ${CMakeOptions}
+echo-verbose "Running command: cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType ${CMakeOptions[@]}"
+cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" "${CMakeOptions[@]}"
 
 if [ $? -ne 0 ]; then
     exit $?
