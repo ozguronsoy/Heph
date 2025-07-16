@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "UUID.h"
-#include "Exceptions/InvalidArgumentException.h"
+#include "Heph/UUID.h"
+#include "Heph/Exceptions/InvalidArgumentException.h"
 #include <unordered_map>
 
 TEST(HephTest, UUID)

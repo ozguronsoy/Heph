@@ -1,4 +1,4 @@
-#include "Exceptions/InvalidOperationException.h"
+#include "Heph/Exceptions/InvalidOperationException.h"
 
 namespace Heph
 {

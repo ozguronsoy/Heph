@@ -12,8 +12,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${HEPH_DEPENDENCY_INCLUDE_DIRS}
     ${GTEST_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_LIST_DIR}/
 )
 
 file(GLOB_RECURSE HEPH_TEST_SOURCES
@@ -28,7 +29,7 @@ add_executable(
 
 target_link_libraries(
     HephTests
-    ${HEPH_LIBRARIES}
+    ${HEPH_DEPENDENCY_LIBRARIES}
     gtest
     gtest_main
 )

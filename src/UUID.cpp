@@ -1,13 +1,13 @@
-#include "UUID.h"
-#include "Exceptions/ExternalException.h"
-#include "Exceptions/InvalidArgumentException.h"
+#include "Heph/UUID.h"
+#include "Heph/Exceptions/ExternalException.h"
+#include "Heph/Exceptions/InvalidArgumentException.h"
 #include <sstream>
 #include <iomanip>
 #include <ctype.h>
 #include <algorithm>
 
 #ifdef _WIN32
-#include "Native/WinHelpers.h"
+#include "Heph/Native/WinHelpers.h"
 #include <combaseapi.h>
 #elif defined(__ANDROID__)
 #endif

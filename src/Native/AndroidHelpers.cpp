@@ -1,9 +1,9 @@
 #ifdef __ANDROID__
 
-#include "Native/AndroidHelpers.h"
-#include "Exceptions/ExternalException.h"
-#include "Exceptions/InvalidArgumentException.h"
-#include "Exceptions/InvalidOperationException.h"
+#include "Heph/Native/AndroidHelpers.h"
+#include "Heph/Exceptions/ExternalException.h"
+#include "Heph/Exceptions/InvalidArgumentException.h"
+#include "Heph/Exceptions/InvalidOperationException.h"
 
 namespace Heph::Native
 {

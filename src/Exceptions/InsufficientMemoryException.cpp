@@ -1,4 +1,4 @@
-#include "Exceptions/InsufficientMemoryException.h"
+#include "Heph/Exceptions/InsufficientMemoryException.h"
 
 namespace Heph
 {

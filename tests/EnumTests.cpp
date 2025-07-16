@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Enum.h"
+#include "Heph/Enum.h"
 #include <type_traits>
 
 #define ENUM_CLASSIC (0)

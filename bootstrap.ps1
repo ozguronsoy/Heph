@@ -3,7 +3,8 @@
 # ----------------------------------------
 
 param (
-    [string]$OutputDir = "build",
+    [string]$BuildDir = "build",
+    [string]$InstallDir = "",
     [string]$CompilerDir = "",
     
     [switch]$gcc,
@@ -82,7 +83,8 @@ if ($Help)
 
     Write-Host "Options:" -ForegroundColor Cyan
 
-    Write-Host "  -OutputDir <path>     " -NoNewline; Write-Host "Specify the output directory for the build (default: 'build')" -ForegroundColor $InfoColor
+    Write-Host "  -BuildDir <path>     " -NoNewline; Write-Host "Specify the build directory" -ForegroundColor $InfoColor
+    Write-Host "  -InstallDir <path>   " -NoNewline; Write-Host "Specify the install directory" -ForegroundColor $InfoColor
     Write-Host "  -CompilerDir <path>   " -NoNewline; Write-Host "Path to the custom compiler toolchain" -ForegroundColor $InfoColor
 
     Write-Host ""
@@ -96,8 +98,8 @@ if ($Help)
     Write-Host "  -Release              " -NoNewline; Write-Host "Configure the project in Release mode" -ForegroundColor $InfoColor
 
     Write-Host ""
-    Write-Host "  -Rebuild              " -NoNewline; Write-Host "Delete the output directory and perform a clean rebuild" -ForegroundColor $InfoColor
-    Write-Host "  -Clean                " -NoNewline; Write-Host "Delete the output directory and exit" -ForegroundColor $InfoColor
+    Write-Host "  -Rebuild              " -NoNewline; Write-Host "Delete the build directory and perform a clean rebuild" -ForegroundColor $InfoColor
+    Write-Host "  -Clean                " -NoNewline; Write-Host "Delete the build directory and exit" -ForegroundColor $InfoColor
 
     Write-Host ""
     Write-Host "  -CleanCache           " -NoNewline; Write-Host "Delete the cache file" -ForegroundColor $InfoColor
@@ -163,9 +165,14 @@ if (-not $NoCache -and -not $CleanCache)
             $CacheMap[$Key.Trim()] = $Value.Trim()
         }
 
-        if ($CacheMap.ContainsKey("OutputDir") -and -not $PSBoundParameters.ContainsKey("OutputDir"))
+        if ($CacheMap.ContainsKey("BuildDir") -and -not $PSBoundParameters.ContainsKey("BuildDir"))
         {
-            $OutputDir = $CacheMap["OutputDir"]
+            $BuildDir = $CacheMap["BuildDir"]
+        }
+
+        if ($CacheMap.ContainsKey("InstallDir") -and -not $PSBoundParameters.ContainsKey("InstallDir"))
+        {
+            $InstallDir = $CacheMap["InstallDir"]
         }
 
         if ($CacheMap.ContainsKey("CompilerDir") -and -not $PSBoundParameters.ContainsKey("CompilerDir"))
@@ -224,11 +231,11 @@ if ($Clean -or $Rebuild)
 {
     Write-Host "Cleaning" -ForegroundColor $InfoColor
     
-    if (Test-Path $OutputDir)
+    if (Test-Path $BuildDir)
     {
-        Remove-Item -Path $OutputDir -Recurse -Force
+        Remove-Item -Path $BuildDir -Recurse -Force
 
-        if (Test-Path $OutputDir)
+        if (Test-Path $BuildDir)
         {
             Write-Host "Failed to remove the output directory, continuing the build" -ForegroundColor $WarningColor
         }
@@ -252,12 +259,12 @@ Write-Host "Building" -ForegroundColor $InfoColor
 Write-Host "Checking for the output directory" -ForegroundColor $InfoColor
 
 
-if (-not (Test-Path $OutputDir))
+if (-not (Test-Path $BuildDir))
 {
     Write-Host "Creating the output directory" -ForegroundColor $InfoColor    
-    New-Item -ItemType Directory -Path $OutputDir | Out-Null
+    New-Item -ItemType Directory -Path $BuildDir | Out-Null
 
-    if (!(Test-Path $OutputDir))
+    if (!(Test-Path $BuildDir))
     {
         Write-Host "Failed to create the output directory" -ForegroundColor $ErrorColor
         exit 1
@@ -271,6 +278,11 @@ if (-not (Test-Path $OutputDir))
 # ----------------------------------------
 # CREATE CMAKE PARAMS
 # ----------------------------------------
+
+if ($InstallDir -ne "")
+{
+    $CMakeOptions += "-DCMAKE_INSTALL_PREFIX=`"$InstallDir`" "
+}
 
 if ($gcc)
 {
@@ -349,6 +361,8 @@ if ($BuildType -eq "" -or ($BuildType -eq "Release" -and $Debug -and -not $Relea
     {
         $BuildType = "Debug"
     }
+
+    $CMakeOptions += "-DCMAKE_BUILD_TYPE=`"$BuildType`" "
 }
 
 if ($BuildTests)
@@ -397,7 +411,8 @@ if (-not $NoCache)
     else 
     {
         $Cache = ""
-        $Cache += "OutputDir=$OutputDir`n"
+        $Cache += "BuildDir=$BuildDir`n"
+        $Cache += "InstallDir=$InstallDir`n"
         $Cache += "CompilerDir=$CompilerDir`n"
         $Cache += "Compiler=$Compiler`n"
         $Cache += "Generator=$Generator`n"
@@ -417,23 +432,23 @@ if (-not $NoCache)
 
 Write-Host "Configuring cmake" -ForegroundColor $InfoColor
 
-Write-Verbose "Running command: 'cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType $CMakeOptions'"
-cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" $($CMakeOptions -split " ")
+Write-Verbose "Running command: 'cmake -S . -B $BuildDir $CMakeOptions'"
+cmake -S . -B "$BuildDir" $($CMakeOptions -split " ")
 
 if ($LASTEXITCODE -ne 0)
 {
     exit $LASTEXITCODE
 }
 
-Write-Verbose "Running command: 'cmake --build $OutputDir --config $BuildType"
-cmake --build "$OutputDir" --config $BuildType
+Write-Verbose "Running command: 'cmake --build $BuildDir --config $BuildType --target install"
+cmake --build "$BuildDir" --config $BuildType --target install
 
 if ($LASTEXITCODE -ne 0)
 {
     exit $LASTEXITCODE
 }
 
-Write-Host "Build files have been written to `"$OutputDir`"" -ForegroundColor $SuccessColor
+Write-Host "Build files have been written to `"$BuildDir`"" -ForegroundColor $SuccessColor
 
 # ----------------------------------------
 # END BUILD

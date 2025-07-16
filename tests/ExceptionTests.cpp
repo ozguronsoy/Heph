@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Exceptions/Exceptions.h"
+#include "Heph/Exceptions/Exceptions.h"
 #include <thread>
 
 #define CHECK_EX_TYPE(pEx, type) { const type* _ex = dynamic_cast<const type*>(pEx); EXPECT_TRUE(_ex != nullptr); }

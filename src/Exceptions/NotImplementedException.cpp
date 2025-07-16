@@ -1,4 +1,4 @@
-#include "Exceptions/NotImplementedException.h"
+#include "Heph/Exceptions/NotImplementedException.h"
 
 namespace Heph
 {

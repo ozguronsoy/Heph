@@ -35,6 +35,11 @@ else()
 
 endif()
 
+set(HEPH_DEPENDENCY_INCLUDE_DIRS "")
+set(HEPH_DEPENDENCY_LIBRARIES "")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
 )
@@ -43,10 +48,12 @@ file(GLOB_RECURSE HEPH_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp
 )
 
-set(HEPH_LIBRARIES)
-
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(HEPH_LIBRARIES ${HEPH_LIBRARIES} uuid)
+
+    find_package(UUID REQUIRED)
+    list(APPEND HEPH_DEPENDENCY_INCLUDE_DIRS ${UUID_INCLUDE_DIRS})
+    list(APPEND HEPH_DEPENDENCY_LIBRARIES ${UUID_LIBRARIES})
+
 endif()
 
 if(HEPH_BUILD_TESTS)
@@ -79,18 +86,53 @@ if(HEPH_BUILD_STATIC OR HEPH_BUILD_SHARED)
         Heph PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        ${HEPH_DEPENDENCY_INCLUDE_DIRS}
     )
 
-    target_link_libraries(Heph ${HEPH_LIBRARIES})
+    target_link_libraries(Heph PUBLIC ${HEPH_DEPENDENCY_LIBRARIES})
+
+    install(DIRECTORY include/ DESTINATION include)
+    install(TARGETS Heph
+        EXPORT HephTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+    )
 
     add_custom_target(
         HEPH_EXPORT_HEADERS ALL
 
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_LIST_DIR}/include
-            ${CMAKE_CURRENT_BINARY_DIR}/include/Heph
+            ${CMAKE_CURRENT_BINARY_DIR}/include
 
-        COMMENT "Copying all headers with preserved subfolders"
+        COMMENT "Copying headers"
+    )
+
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/HephConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    configure_package_config_file(
+        "${CMAKE_CURRENT_LIST_DIR}/cmake/HephConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/HephConfig.cmake"
+        INSTALL_DESTINATION lib/cmake/Heph
+    )
+
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/HephConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/HephConfigVersion.cmake"
+        DESTINATION lib/cmake/Heph
+    )
+
+    install(EXPORT HephTargets
+        FILE HephTargets.cmake
+        NAMESPACE Heph::
+        DESTINATION lib/cmake/Heph
     )
 
 endif()

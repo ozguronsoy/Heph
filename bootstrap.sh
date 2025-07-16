@@ -5,7 +5,8 @@
 # ----------------------------------------
 
 # passed by the user
-OutputDir="build"
+BuildDir="build"
+InstallDir=""
 CompilerDir=""
 Generator="default"
 
@@ -30,7 +31,8 @@ Verbose=false
 Help=false
 
 # flags for checking if args are passed
-seen_OutputDir=false
+seen_BuildDir=false
+seen_InstallDir=false
 seen_CompilerDir=false
 seen_Generator=false
 
@@ -68,9 +70,14 @@ Compilers=("gcc" "clang")
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --output-dir)
-            OutputDir="$2"
-            seen_OutputDir=true
+        --build-dir)
+            BuildDir="$2"
+            seen_BuildDir=true
+            shift 2
+            ;;
+        --install-dir)
+            InstallDir="$2"
+            seen_InstallDir=true
             shift 2
             ;;
         --compiler-dir)
@@ -202,7 +209,8 @@ if [ "$Help" = true ]; then
     echo "  ./bootstrap [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --output-dir <path>     Specify the output directory for the build (default: 'build')"
+    echo "  --build-dir <path>      Specify the build directory (default: 'build')"
+    echo "  --install-dir <path>    Specify the install directory"
     echo "  --compiler-dir <path>   Path to the custom compiler toolchain"
     echo ""
     echo "  --gcc                   Use GCC as the compiler"
@@ -212,8 +220,8 @@ if [ "$Help" = true ]; then
     echo "  --debug                 Configure the project in Debug mode"
     echo "  --release               Configure the project in Release mode"
     echo ""
-    echo "  --rebuild               Delete the output directory and perform a clean rebuild"
-    echo "  --clean                 Delete the output directory and exit"
+    echo "  --rebuild               Delete the build directory and perform a clean rebuild"
+    echo "  --clean                 Delete the build directory and exit"
     echo ""
     echo "  --clean-cache           Delete the cache file"
     echo "  --no-cache              Ignore cache file for this run"
@@ -275,8 +283,12 @@ if [ "$NoCache" != true ] && [ "$CleanCache" != true ]; then
             eval "[ \"\${seen_${param}:-false}\" = true ]"
         }
 
-        if [[ -n "${CacheMap[OutputDir]}" ]] && ! param_set OutputDir; then
-            OutputDir="${CacheMap[OutputDir]}"
+        if [[ -n "${CacheMap[BuildDir]}" ]] && ! param_set BuildDir; then
+            BuildDir="${CacheMap[BuildDir]}"
+        fi
+
+        if [[ -n "${CacheMap[InstallDir]}" ]] && ! param_set InstallDir; then
+            InstallDir="${CacheMap[InstallDir]}"
         fi
 
         if [[ -n "${CacheMap[CompilerDir]}" ]] && ! param_set CompilerDir; then
@@ -321,10 +333,10 @@ fi
 if [ "$Clean" = true ] || [ "$Rebuild" = true ]; then
     echo "Cleaning"
 
-    if [ -d "$OutputDir" ]; then
-        rm -rf "$OutputDir"
+    if [ -d "$BuildDir" ]; then
+        rm -rf "$BuildDir"
 
-        if [ -d "$OutputDir" ]; then
+        if [ -d "$BuildDir" ]; then
             echo "Failed to remove the output directory, continuing the build"
         fi
     fi
@@ -345,11 +357,11 @@ fi
 echo "Building"
 echo "Checking for the output directory"
 
-if [ ! -d "$OutputDir" ]; then
+if [ ! -d "$BuildDir" ]; then
     echo "Creating the output directory"
-    mkdir -p "$OutputDir"
+    mkdir -p "$BuildDir"
 
-    if [ ! -d "$OutputDir" ]; then
+    if [ ! -d "$BuildDir" ]; then
         echo "Failed to create the output directory" >&2
         exit 1
     fi
@@ -362,6 +374,10 @@ fi
 # ----------------------------------------
 # CREATE CMAKE PARAMS
 # ----------------------------------------
+
+if [[ -n "$InstallDir" ]]; then
+    CMakeOptions+=("-DCMAKE_INSTALL_PREFIX=$InstallDir")
+fi
 
 if [[ "$gcc" = true ]]; then
     Compiler="gcc"
@@ -411,6 +427,8 @@ if [ -z "$BuildType" ] || { [ "$BuildType" = "Release" ] && [ "$Debug" = true ] 
     else
         BuildType="Debug"
     fi
+
+    CMakeOptions+=("-DCMAKE_BUILD_TYPE=$BuildType")
 fi
 
 if [ "$BuildTests" = true ]; then
@@ -448,7 +466,8 @@ if [ "$NoCache" != true ]; then
         echo "Failed to create the cache file"
     else
         {
-            echo "OutputDir=$OutputDir"
+            echo "BuildDir=$BuildDir"
+            echo "InstallDir=$InstallDir"
             echo "CompilerDir=$CompilerDir"
             echo "Compiler=$Compiler"
             echo "Generator=$Generator"
@@ -461,20 +480,28 @@ fi
 # END UPDATE CACHE
 # ----------------------------------------
 
+# ----------------------------------------
+# BUILD
+# ----------------------------------------
+
 echo "Configuring cmake"
 
-echo-verbose "Running command: cmake -S . -B $OutputDir -DCMAKE_BUILD_TYPE=$BuildType ${CMakeOptions[@]}"
-cmake -S . -B "$OutputDir" -DCMAKE_BUILD_TYPE="$BuildType" "${CMakeOptions[@]}"
+echo-verbose "Running command: cmake -S . -B $BuildDir ${CMakeOptions[@]}"
+cmake -S . -B "$BuildDir" "${CMakeOptions[@]}"
 
 if [ $? -ne 0 ]; then
     exit $?
 fi
 
-echo-verbose "Running command: cmake --build $OutputDir --config $BuildType"
-cmake --build "$OutputDir" --config "$BuildType"
+echo-verbose "Running command: cmake --build $BuildDir --config $BuildType --target install"
+cmake --build "$BuildDir" --config "$BuildType" --target install
 
 if [ $? -ne 0 ]; then
     exit $?
 fi
 
-echo "Build files have been written to \"$OutputDir\""
+echo "Build files have been written to \"$BuildDir\""
+
+# ----------------------------------------
+# END BUILD
+# ----------------------------------------

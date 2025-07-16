@@ -1,5 +1,5 @@
-#include "Exceptions/Exception.h"
-#include "ConsoleLogger.h"
+#include "Heph/Exceptions/Exception.h"
+#include "Heph/ConsoleLogger.h"
 #include <sstream>
 
 namespace Heph
