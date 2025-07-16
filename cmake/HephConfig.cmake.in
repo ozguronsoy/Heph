@@ -2,6 +2,8 @@
 
 include(CMakeFindDependencyMacro)
 
-find_dependency(UUID REQUIRED)
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_dependency(UUID REQUIRED)
+endif()
 
-include("${CMAKE_CURRENT_LIST_DIR}/MyLibTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/HephTargets.cmake")

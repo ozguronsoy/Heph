@@ -1,5 +1,4 @@
 #include "Heph/Exceptions/Exception.h"
-#include "Heph/ConsoleLogger.h"
 #include <sstream>
 
 namespace Heph
@@ -65,8 +64,7 @@ namespace Heph
     void Exception::DefaultHandler(EventParams& params)
     {
         std::ostringstream oss;
-        oss << params.Args<ExceptionEventArgs>().exception << std::endl;
-        ConsoleLogger::LogError(oss.str());
+        oss << "\033[31m" << params.Args<ExceptionEventArgs>().exception << "\033[0m" << std::endl;
     }
 
     Exception::ExceptionList& Exception::ExceptionListInstance() noexcept
@@ -77,11 +75,7 @@ namespace Heph
 
     std::ostream& operator<<(std::ostream& os, const Exception& ex)
     {
-#ifdef __ANDROID__
         os << ex.FormattedMessage();
-#else
-        os << std::endl << ex.FormattedMessage();
-#endif
         return os;
     }
 }

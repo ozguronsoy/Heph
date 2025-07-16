@@ -37,12 +37,12 @@ Linux:
 
 ### Build
 
+You can build the project directly using CMake or by running ``./bootstrap [OPTIONS]``.
+To see available options, run ``./bootstrap.sh --help`` on Linux or ``./bootstrap.ps1 -Help`` on Windows.
+
 CMake options:
 
 - ``-DHEPH_BUILD_STATIC=On`` builds static library.
 - ``-DHEPH_BUILD_SHARED=On`` builds shared library.
 - ``-DHEPH_BUILD_DOCS=On`` builds documentation.
 - ``-DHEPH_BUILD_TESTS=On`` builds tests.
-
-Build Options:
-- ``-DHEPH_CL_DISABLE_COLORED_OUTPUT`` disables colored console output.

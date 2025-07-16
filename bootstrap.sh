@@ -10,6 +10,8 @@ InstallDir=""
 CompilerDir=""
 Generator="default"
 
+install=false
+
 gcc=false
 clang=false
 
@@ -35,6 +37,8 @@ seen_BuildDir=false
 seen_InstallDir=false
 seen_CompilerDir=false
 seen_Generator=false
+
+seen_install=false
 
 seen_gcc=false
 seen_clang=false
@@ -89,6 +93,12 @@ while [[ $# -gt 0 ]]; do
             Generator="$2"
             seen_Generator=true
             shift 2
+            ;;
+
+        --install)
+            install=true
+            seen_install=true
+            shift
             ;;
 
         --gcc)
@@ -206,12 +216,14 @@ echo-verbose() {
 if [ "$Help" = true ]; then
 
     echo "Usage:"
-    echo "  ./bootstrap [OPTIONS]"
+    echo "  ./bootstrap.sh [OPTIONS]"
     echo ""
     echo "Options:"
     echo "  --build-dir <path>      Specify the build directory (default: 'build')"
     echo "  --install-dir <path>    Specify the install directory"
     echo "  --compiler-dir <path>   Path to the custom compiler toolchain"
+    echo ""
+    echo "  --install               Run the installation step after building the project"
     echo ""
     echo "  --gcc                   Use GCC as the compiler"
     echo "  --clang                 Use Clang as the compiler"
@@ -493,11 +505,22 @@ if [ $? -ne 0 ]; then
     exit $?
 fi
 
-echo-verbose "Running command: cmake --build $BuildDir --config $BuildType --target install"
-cmake --build "$BuildDir" --config "$BuildType" --target install
+echo-verbose "Running command: cmake --build $BuildDir --config $BuildType"
+cmake --build "$BuildDir" --config "$BuildType"
 
 if [ $? -ne 0 ]; then
     exit $?
+fi
+
+if [ "$install" = true]; then
+    
+    echo-verbose "Running command: cmake --install $BuildDir --config $BuildType"
+    cmake --install "$BuildDir" --config "$BuildType"
+
+    if [ $? -ne 0 ]; then
+        exit $?
+    fi
+
 fi
 
 echo "Build files have been written to \"$BuildDir\""

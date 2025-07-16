@@ -6,6 +6,8 @@ param (
     [string]$BuildDir = "build",
     [string]$InstallDir = "",
     [string]$CompilerDir = "",
+
+    [switch]$Install,
     
     [switch]$gcc,
     [switch]$clang,
@@ -78,14 +80,17 @@ if ($Verbose)
 if ($Help)
 {
     Write-Host "Usage:" -ForegroundColor Cyan
-    Write-Host "  ./bootstrap [OPTIONS]" -ForegroundColor $InfoColor
+    Write-Host "  ./bootstrap.ps1 [OPTIONS]" -ForegroundColor $InfoColor
     Write-Host ""
 
     Write-Host "Options:" -ForegroundColor Cyan
 
-    Write-Host "  -BuildDir <path>     " -NoNewline; Write-Host "Specify the build directory" -ForegroundColor $InfoColor
-    Write-Host "  -InstallDir <path>   " -NoNewline; Write-Host "Specify the install directory" -ForegroundColor $InfoColor
+    Write-Host "  -BuildDir <path>      " -NoNewline; Write-Host "Specify the build directory" -ForegroundColor $InfoColor
+    Write-Host "  -InstallDir <path>    " -NoNewline; Write-Host "Specify the install directory" -ForegroundColor $InfoColor
     Write-Host "  -CompilerDir <path>   " -NoNewline; Write-Host "Path to the custom compiler toolchain" -ForegroundColor $InfoColor
+
+    Write-Host ""
+    Write-Host "  -Install              " -NoNewline; Write-Host "Run the installation step after building the project" -ForegroundColor $InfoColor
 
     Write-Host ""
     Write-Host "  -gcc                  " -NoNewline; Write-Host "Use GCC as the compiler" -ForegroundColor $InfoColor
@@ -440,12 +445,23 @@ if ($LASTEXITCODE -ne 0)
     exit $LASTEXITCODE
 }
 
-Write-Verbose "Running command: 'cmake --build $BuildDir --config $BuildType --target install"
-cmake --build "$BuildDir" --config $BuildType --target install
+Write-Verbose "Running command: 'cmake --build $BuildDir --config $BuildType"
+cmake --build "$BuildDir" --config $BuildType
 
 if ($LASTEXITCODE -ne 0)
 {
     exit $LASTEXITCODE
+}
+
+if ($Install)
+{
+    Write-Verbose "Running command: 'cmake --install $BuildDir --config $BuildType"
+    cmake --install "$BuildDir" --config $BuildType
+
+    if ($LASTEXITCODE -ne 0)
+    {
+        exit $LASTEXITCODE
+    }
 }
 
 Write-Host "Build files have been written to `"$BuildDir`"" -ForegroundColor $SuccessColor

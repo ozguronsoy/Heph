@@ -31,6 +31,7 @@ jobs:
       - name: Install Doxygen
         run: |
           sudo apt update
+          sudo apt install uuid-dev
           sudo apt remove doxygen
           cd /tmp
           wget https://www.doxygen.nl/files/doxygen-1.11.0.linux.bin.tar.gz
