@@ -1,5 +1,5 @@
-#ifndef HEPH_ICLONEABLE_H
-#define HEPH_ICLONEABLE_H
+#ifndef HEPH_I_CLONEABLE_H
+#define HEPH_I_CLONEABLE_H
 
 #include "Heph/Utils.h"
 

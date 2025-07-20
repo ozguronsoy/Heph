@@ -2,8 +2,7 @@
 #define HEPH_BUFFER_H
 
 #include "Heph/Utils.h"
-#include "Heph/Buffers/BufferFlags.h"
-#include "Heph/Buffers/BufferIterator.h"
+#include "Heph/Buffers/Iterators/BufferIterator.h"
 #include "Heph/Enum.h"
 #include "Heph/Exceptions/Exception.h"
 #include "Heph/Exceptions/InvalidArgumentException.h"
@@ -35,6 +34,15 @@ namespace Heph
         using type = std::initializer_list<TData>;
     };
 
+    /** @brief Specifies how the transpose operation modifies the buffer. */
+    enum TransposeMode : bool
+    {
+        /** @brief Specifies that both memory and strides will be modified. */
+        Normal = false,
+        /** @brief Specifies that only strides will be modified, not the memory. */
+        InPlace = true
+    };
+
     /**
     * @brief Container for storing large sequential data.
     *
@@ -62,10 +70,15 @@ namespace Heph
         /** @brief Type of the initializer list. */
         using InitializerList = typename BufferInitializerListHelper<TData, NDimensions>::type;
 
+    public:
         /** @copybrief iterator::BUFFER_SIZE_ZERO */
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
         /** @copybrief iterator::BUFFER_INDEX_ZERO */
         static constexpr buffer_index_t BUFFER_INDEX_ZERO = iterator::BUFFER_INDEX_ZERO;
+        /** @brief Specifies that both memory and strides will be modified. */
+        static constexpr bool TRANSPOSE_MODE_NORMAL = false;
+        /** @brief Specifies that only strides will be modified, not the memory. */
+        static constexpr bool TRANSPOSE_MODE_INPLACE = true;
 
     protected:
         /** @brief Pointer to the first element of the buffer, or nullptr if the buffer is empty. */
@@ -77,19 +90,15 @@ namespace Heph
         /** @brief Number of elements to advance in one step for each dimension. */
         buffer_size_t strides;
 
-        /** @brief Specifies the configuration flags for the buffer. */
-        Enum<BufferFlags> flags;
-
     public:
         /**
          * @copydoc constructor
          *
-         * @param flags @copybrief flags
          * @param size @copybrief size
          * @exception InsufficientMemoryException
          */
-        explicit Buffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size)
-            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO), flags(flags)
+        explicit Buffer(auto... size)
+            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
         {
             static_assert(sizeof...(size) <= NDimensions, "Invalid number of size parameters parameters.");
             static_assert((std::is_convertible_v<decltype(size), size_t> && ...), "Invalid type for size parameters, must be convertible to size_t.");
@@ -103,7 +112,7 @@ namespace Heph
             const size_t elementCount = this->ElementCount();
             if (elementCount > 0)
             {
-                this->pData = Buffer::Allocate(elementCount, flags);
+                this->pData = Buffer::Allocate(elementCount);
             }
 
             this->CalcStrides();
@@ -112,17 +121,16 @@ namespace Heph
         /**
          * @copydoc constructor
          *
-         * @param flags @copybrief flags
          * @param size @copybrief size
          * @exception InsufficientMemoryException
          */
-        explicit Buffer(Enum<BufferFlags> flags, const buffer_size_t& size)
-            : pData(nullptr), size(size), flags(flags)
+        explicit Buffer(const buffer_size_t& size)
+            : pData(nullptr), size(size)
         {
             const size_t elementCount = this->ElementCount();
             if (elementCount > 0)
             {
-                this->pData = Buffer::Allocate(elementCount, flags);
+                this->pData = Buffer::Allocate(elementCount);
             }
             this->CalcStrides();
         }
@@ -176,7 +184,7 @@ namespace Heph
 
             if constexpr (NDimensions == 1)
             {
-                Buffer::Reallocate(this->pData, 0, rhs.size(), BufferFlags::AllocUninitialized);
+                Buffer::Reallocate(this->pData, 0, rhs.size());
                 (void)std::copy(rhs.begin(), rhs.end(), this->begin());
 
                 this->size = rhs.size();
@@ -191,7 +199,7 @@ namespace Heph
 
                     if (temp.ElementCount() == 0) return *this;
 
-                    Buffer::Reallocate(this->pData, 0, temp.ElementCount() * rhs.size(), BufferFlags::AllocUninitialized);
+                    Buffer::Reallocate(this->pData, 0, temp.ElementCount() * rhs.size());
                     if constexpr (NDimensions == 2)
                         this->size[1] = temp.Size();
                     else
@@ -244,12 +252,11 @@ namespace Heph
 
                 this->size = rhs.size;
                 this->strides = rhs.strides;
-                this->flags = rhs.flags;
 
                 const size_t elementCount = rhs.ElementCount();
                 if (elementCount > 0)
                 {
-                    this->pData = Buffer::Allocate(elementCount, BufferFlags::AllocUninitialized);
+                    this->pData = Buffer::Allocate(elementCount);
                     (void)std::copy(rhs.begin(), rhs.end(), this->begin());
                 }
             }
@@ -272,12 +279,10 @@ namespace Heph
                 this->pData = rhs.pData;
                 this->size = rhs.size;
                 this->strides = rhs.strides;
-                this->flags = rhs.flags;
 
                 rhs.pData = nullptr;
                 rhs.size = BUFFER_SIZE_ZERO;
                 rhs.strides = BUFFER_SIZE_ZERO;
-                rhs.flags = BufferFlags::None;
             }
 
             return *this;
@@ -294,13 +299,13 @@ namespace Heph
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
+            return iterator::template Get<false>(this->pData, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc operator[] */
         TData& operator[](const buffer_index_t& indices)
         {
-            return iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, indices);
+            return iterator::template Get<false>(this->pData, this->size, this->strides, indices);
         }
 
         /** @copydoc operator[] */
@@ -309,13 +314,13 @@ namespace Heph
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return const_iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
+            return const_iterator::template Get<false>(this->pData, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc operator[] */
         const TData& operator[](const buffer_index_t& indices) const
         {
-            return const_iterator::template Get<false>(this->pData, this->flags, this->size, this->strides, indices);
+            return const_iterator::template Get<false>(this->pData, this->size, this->strides, indices);
         }
 
         /**
@@ -337,18 +342,6 @@ namespace Heph
         bool IsEmpty() const
         {
             return (this->ElementCount() == 0) || (this->pData == nullptr);
-        }
-
-        /** Gets the buffer flags. */
-        Enum<BufferFlags> Flags() const
-        {
-            return this->flags;
-        }
-
-        /** Sets the buffer flags. */
-        void SetFlags(BufferFlags flags)
-        {
-            this->flags = flags;
         }
 
         /** Gets the number of elements in each dimension the buffer stores. */
@@ -390,13 +383,13 @@ namespace Heph
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
+            return iterator::template Get<true>(this->pData, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc At */
         TData& At(const buffer_index_t& indices)
         {
-            return iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, indices);
+            return iterator::template Get<true>(this->pData, this->size, this->strides, indices);
         }
 
         /** @copydoc At */
@@ -405,13 +398,13 @@ namespace Heph
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
-            return const_iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
+            return const_iterator::template Get<true>(this->pData, this->size, this->strides, std::forward<index_t>(static_cast<index_t>(indices))...);
         }
 
         /** @copydoc At */
         const TData& At(const buffer_index_t& indices) const
         {
-            return const_iterator::template Get<true>(this->pData, this->flags, this->size, this->strides, indices);
+            return const_iterator::template Get<true>(this->pData, this->size, this->strides, indices);
         }
 
         /** Sets all elements to default value. */
@@ -428,7 +421,6 @@ namespace Heph
         {
             this->size = BUFFER_SIZE_ZERO;
             this->strides = BUFFER_SIZE_ZERO;
-            this->flags = BufferFlags::None;
 
             if (this->pData != nullptr)
             {
@@ -440,13 +432,13 @@ namespace Heph
         /** Returns an iterator to the beginning. */
         iterator begin()
         {
-            return iterator(this->pData, this->flags, this->size, this->strides);
+            return iterator(this->pData, this->size, this->strides);
         }
 
         /** @copydoc begin */
         const_iterator begin() const
         {
-            return const_iterator(this->pData, this->flags, this->size, this->strides);
+            return const_iterator(this->pData, this->size, this->strides);
         }
 
         /** @copydoc begin */
@@ -538,12 +530,11 @@ namespace Heph
          * Allocates memory.
          *
          * @param elementCount Number of elements to allocate.
-         * @param flags @copybrief flags
          * @return Pointer to the allocated memory.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static TData* Allocate(size_t elementCount, Enum<BufferFlags> flags)
+        static TData* Allocate(size_t elementCount)
         {
             if (elementCount == 0)
             {
@@ -556,14 +547,11 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to allocate {} bytes.", elementCount * sizeof(TData)));
             }
 
-            if (!flags.Test(BufferFlags::AllocUninitialized))
-            {
-                std::fill(
-                    pData,
-                    pData + elementCount,
-                    TData()
-                );
-            }
+            std::fill(
+                pData,
+                (pData + elementCount),
+                TData()
+            );
 
             return pData;
         }
@@ -574,11 +562,10 @@ namespace Heph
          * @param pData Pointer to the data that will be reallocated.
          * @param oldElementCount Old number of elements.
          * @param newElementCount New number of elements.
-         * @param flags @copybrief flags
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void Reallocate(TData*& pData, size_t oldElementCount, size_t newElementCount, Enum<BufferFlags> flags)
+        static void Reallocate(TData*& pData, size_t oldElementCount, size_t newElementCount)
         {
             if (newElementCount == 0)
             {
@@ -591,11 +578,11 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to reallocate {} bytes.", newElementCount * sizeof(TData)));
             }
 
-            if (newElementCount > oldElementCount && !flags.Test(BufferFlags::AllocUninitialized))
+            if (newElementCount > oldElementCount)
             {
                 std::fill(
-                    pTemp + oldElementCount,
-                    pTemp + newElementCount,
+                    (pTemp + oldElementCount),
+                    (pTemp + newElementCount),
                     TData()
                 );
             }
@@ -708,8 +695,7 @@ namespace Heph
                 newSize[0] = size;
             }
 
-            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize), src.flags);
-            dest.flags = src.flags;
+            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize));
             dest.size = newSize;
             dest.CalcStrides();
 
@@ -754,7 +740,7 @@ namespace Heph
                 }
             }
 
-            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount());
 
             if (&dest == &src)
             {
@@ -800,7 +786,7 @@ namespace Heph
                 }
             }
 
-            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount());
             (void)std::copy(src.begin(), src.end(), dest.end()); // dest size is not updated yet
 
             if constexpr (NDimensions == 1) dest.size += src.size;
@@ -844,7 +830,7 @@ namespace Heph
                 }
             }
 
-            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), BufferFlags::AllocUninitialized);
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount());
 
             iterator itInsertBegin = dest.begin();
             itInsertBegin.IncrementIndex(0, index);
@@ -908,7 +894,7 @@ namespace Heph
             else
                 newSize[0] -= size;
 
-            Buffer temp(BufferFlags::AllocUninitialized, newSize);
+            Buffer temp(newSize);
 
             const_iterator itBuffer = buffer.cbegin();
             itBuffer.IncrementIndex(0, index);
@@ -984,11 +970,12 @@ namespace Heph
          * @param src The source buffer.
          * @param dest The destination buffer.
          * @param perm Permutation of the dimensions.
+         * @param mode Specifies how the transpose operation modifies the buffer.
          * @exception InvalidOperationException
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void Transpose(const Buffer& src, Buffer& dest, const buffer_size_t& perm)
+        static void Transpose(const Buffer& src, Buffer& dest, const buffer_size_t& perm, Enum<TransposeMode> mode)
         {
             if constexpr (NDimensions == 1 || !std::equality_comparable<TData>)
             {
@@ -997,12 +984,12 @@ namespace Heph
             else
             {
                 const bool sameInstance = &src == &dest;
-                const bool inPlace = src.flags.Test(BufferFlags::TransposeInPlace);
+                const bool inPlace = mode.Test(TransposeMode::InPlace);
 
                 if (sameInstance && !inPlace)
                 {
                     Buffer temp;
-                    Buffer::Transpose(src, temp, perm);
+                    Buffer::Transpose(src, temp, perm, mode);
                     dest = std::move(temp);
                     return;
                 }
@@ -1026,10 +1013,9 @@ namespace Heph
 
                 if (!sameInstance)
                 {
-                    Buffer::Reallocate(dest.pData, dest.ElementCount(), src.ElementCount(), BufferFlags::AllocUninitialized);
+                    Buffer::Reallocate(dest.pData, dest.ElementCount(), src.ElementCount());
                     dest.size = src.size;
                     dest.strides = src.strides;
-                    dest.flags = src.flags;
                 }
 
                 if (inPlace)
@@ -1101,11 +1087,11 @@ namespace Heph
             {
                 if constexpr (NDimensions == 1)
                 {
-                    Buffer::Reallocate(buffer.pData, buffer.ElementCount(), newElementCount, buffer.flags);
+                    Buffer::Reallocate(buffer.pData, buffer.ElementCount(), newElementCount);
                 }
                 else
                 {
-                    Buffer temp(BufferFlags::AllocUninitialized, newSize);
+                    Buffer temp(newSize);
 
                     iterator it = temp.begin();
                     iterator itEnd = temp.end();

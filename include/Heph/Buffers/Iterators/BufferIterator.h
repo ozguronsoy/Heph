@@ -2,7 +2,6 @@
 #define HEPH_BUFFER_ITERATOR_H
 
 #include "Heph/Utils.h"
-#include "Heph/Buffers/BufferFlags.h"
 #include "Heph/Concepts.h"
 #include "Heph/Enum.h"
 #include "Heph/Exceptions/InvalidArgumentException.h"
@@ -11,6 +10,7 @@
 #include <functional>
 #include <tuple>
 #include <compare>
+#include <numeric>
 
 /** @file */
 
@@ -54,8 +54,6 @@ namespace Heph
     private:
         /** @brief Pointer to pointer to the first element of the buffer. */
         pointer* ppData;
-        /** @brief Pointer to the buffer flags. */
-        Enum<BufferFlags> const* pFlags;
         /** @brief Pointer to the buffer size. */
         buffer_size_t const* pSize;
         /** @brief Pointer to the buffer strides. */
@@ -68,19 +66,18 @@ namespace Heph
          * @copydoc constructor
          *
          * @param ptr Pointer to the first element of the buffer.
-         * @param flags Buffer flags.
          * @param size Buffer size.
          * @param strides Buffer strides.
          */
-        BufferIterator(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides)
-            : ppData(&ptr), pFlags(&flags), pSize(&size), pStrides(&strides), indices(BUFFER_INDEX_ZERO)
+        BufferIterator(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides)
+            : ppData(&ptr), pSize(&size), pStrides(&strides), indices(BUFFER_INDEX_ZERO)
         {
         }
 
         /** Gets the element referenced by the iterator. */
         reference operator*()
         {
-            return BufferIterator::Get<false>(*this->ppData, *this->pFlags, *this->pSize, *this->pStrides, this->indices);
+            return BufferIterator::Get<false>(*this->ppData, *this->pSize, *this->pStrides, this->indices);
         }
 
         /** Provides pointer-like access to the element referenced by the iterator. */
@@ -323,19 +320,18 @@ namespace Heph
          * @tparam CheckErrors Determines whether to validate indices.
          * @tparam NDim Number of dimensions for SFINAE, must be equal to ``NDimensions``.
          * @param ptr Pointer to the first element of the buffer.
-         * @param flags Buffer flags.
          * @param size Buffer size.
          * @param strides Buffer strides.
          */
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
+        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
             const buffer_index_t indicesArray = { std::forward<index_t>(static_cast<index_t>(indices))... };
-            return BufferIterator::Get<CheckErrors>(ptr, flags, size, strides, indicesArray);
+            return BufferIterator::Get<CheckErrors>(ptr, size, strides, indicesArray);
         }
 
         /**
@@ -343,57 +339,38 @@ namespace Heph
          *
          * @tparam CheckErrors Determines whether to validate indices.
          * @param ptr Pointer to the first element of the buffer.
-         * @param flags Buffer flags.
          * @param size Buffer size.
          * @param strides Buffer strides.
          */
         template<bool CheckErrors>
-        static reference Get(pointer& ptr, const Enum<BufferFlags>& flags, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
+        static reference Get(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
         {
-            const bool isCircular = flags.Test(BufferFlags::Circular);
-
             if constexpr (NDimensions == 1)
             {
-                if (isCircular)
+                if constexpr (CheckErrors)
                 {
-                    return ptr[indices % size];
-                }
-                else
-                {
-                    if constexpr (CheckErrors)
+                    if (indices < 0 || indices >= size)
                     {
-                        if (indices < 0 || indices >= size)
+                        HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
+                    }
+                }
+
+                return ptr[indices];
+            }
+            else
+            {
+                if constexpr (CheckErrors)
+                {
+                    for (size_t i = 0; i < NDimensions; ++i)
+                    {
+                        if (indices[i] < 0 || indices[i] >= size[i])
                         {
                             HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
                         }
                     }
-                    return ptr[indices];
                 }
-            }
-            else
-            {
-                index_t n = 0;
-                if (isCircular)
-                {
-                    for (size_t i = 0; i < NDimensions; ++i)
-                    {
-                        n += (indices[i] % size[i]) * strides[i];
-                    }
-                }
-                else
-                {
-                    for (size_t i = 0; i < NDimensions; ++i)
-                    {
-                        if constexpr (CheckErrors)
-                        {
-                            if (indices[i] < 0 || indices[i] >= size[i])
-                            {
-                                HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
-                            }
-                        }
-                        n += indices[i] * strides[i];
-                    }
-                }
+
+                const index_t n = std::inner_product(indices.begin(), indices.end(), strides.begin(), 0);
                 return ptr[n];
             }
         }

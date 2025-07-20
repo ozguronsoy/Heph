@@ -53,9 +53,9 @@ namespace Heph
 
     public:
         /** @copydoc Buffer::Buffer */
-        explicit ArithmeticBuffer(Enum<BufferFlags> flags = BufferFlags::None, auto... size) : Buffer(flags, std::forward<decltype(size)>(size)...) {}
+        explicit ArithmeticBuffer(auto... size) : Buffer(std::forward<decltype(size)>(size)...) {}
         /** @copydoc Buffer::Buffer */
-        explicit ArithmeticBuffer(Enum<BufferFlags> flags, const buffer_size_t& size) : Buffer(flags, size) {}
+        explicit ArithmeticBuffer(const buffer_size_t& size) : Buffer(size) {}
         /** @copydoc Buffer::Buffer(const InitializerList&) */
         ArithmeticBuffer(const InitializerList& rhs) : Buffer(rhs) {}
         /** @copydoc Buffer::Buffer(const Buffer&) */
@@ -284,12 +284,11 @@ namespace Heph
             requires Subtractable<TLhs, TData, TData>
         friend ArithmeticBuffer operator-(const TLhs& lhs, const ArithmeticBuffer& rhs)
         {
-            ArithmeticBuffer result(BufferFlags::AllocUninitialized, rhs.size);
+            ArithmeticBuffer result(rhs.size);
 
             iterator itResult = result.begin();
             for (const TData& rhsElement : rhs) *(itResult++) = lhs - rhsElement;
 
-            result.flags = rhs.flags;
             return result;
         }
 
@@ -320,12 +319,11 @@ namespace Heph
             requires Divisible<TLhs, TData, TData>
         friend ArithmeticBuffer operator/(const TLhs& lhs, const ArithmeticBuffer& rhs)
         {
-            ArithmeticBuffer result(BufferFlags::AllocUninitialized, rhs.size);
+            ArithmeticBuffer result(rhs.size);
 
             iterator itResult = result.begin();
             for (const TData& rhsElement : rhs) *(itResult++) = lhs / rhsElement;
 
-            result.flags = rhs.flags;
             return result;
         }
 
@@ -578,13 +576,13 @@ namespace Heph
         }
 
         /** @copydoc ArithmeticBuffer::Transpose */
-        void Transpose(auto... perm)
+        void Transpose(Enum<TransposeMode> mode, auto... perm)
         {
             static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
             static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
 
             const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
-            this->Transpose(permArray);
+            this->Transpose(mode, permArray);
         }
 
         /**
@@ -592,15 +590,17 @@ namespace Heph
          *
          * @note This method allocates memory for the destination buffer, hence no need to allocate in advance.
          *
+         * @param mode Specifies how the transpose operation modifies the buffer.
          * @param perm Permutation of the dimensions.
          * @exception InvalidOperationException
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        virtual void Transpose(const buffer_size_t& perm)
+        virtual void Transpose(Enum<TransposeMode> mode, const buffer_size_t& perm)
         {
-            Buffer::Transpose(*this, *this, perm);
+            Buffer::Transpose(*this, *this, perm, mode);
         }
+
 
         /**
          * Changes the size of the buffer.<br>

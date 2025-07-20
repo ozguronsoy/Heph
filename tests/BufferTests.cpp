@@ -19,7 +19,7 @@ public:
 
 public:
     template<typename... Args>
-    TestBuffer(BufferFlags flags = BufferFlags::None, Args... args) : Base(flags, std::forward<Args>(args)...) {}
+    TestBuffer(Args... args) : Base(std::forward<Args>(args)...) {}
 
     TestBuffer& operator<<=(size_t n)
     {
@@ -65,18 +65,18 @@ public:
         Base::Replace(*this, b, index, bIndex, size);
     }
 
-    void Transpose(auto... perm)
+    void Transpose(Enum<TransposeMode> mode, auto... perm)
     {
         static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");
         static_assert((std::is_convertible_v<decltype(perm), size_t> && ...), "Invalid type for perm parameters, must be convertible to size_t.");
 
         const buffer_size_t permArray = { std::forward<size_t>(static_cast<size_t>(perm))... };
-        this->Transpose(permArray);
+        this->Transpose(mode, permArray);
     }
 
-    void Transpose(const buffer_size_t& perm)
+    void Transpose(Enum<TransposeMode> mode, const buffer_size_t& perm)
     {
-        Base::Transpose(*this, *this, perm);
+        Base::Transpose(*this, *this, perm, mode);
     }
 
     void Resize(auto... newSize)
@@ -116,10 +116,10 @@ TEST(HephTest, Buffer_Constructors)
 
     {
         constexpr std::array<size_t, 2> expected_b2Size = { 3, 2 };
-        TestBuffer<1> b1(BufferFlags::None, 5);
-        TestBuffer<2> b2(BufferFlags::None, 3, 2);
-        const TestBuffer<1> cb1(BufferFlags::None, 5);
-        const TestBuffer<2> cb2(BufferFlags::None, 3, 2);
+        TestBuffer<1> b1(5);
+        TestBuffer<2> b2(3, 2);
+        const TestBuffer<1> cb1(5);
+        const TestBuffer<2> cb2(3, 2);
 
         EXPECT_EQ(b1.ElementCount(), 5);
         EXPECT_EQ(b1.Size(), 5);
@@ -143,52 +143,52 @@ TEST(HephTest, Buffer_Constructors)
             EXPECT_EQ(element, 0);
     }
 
-    {
-        TestBuffer<1> b1(BufferFlags::Circular, 5);
-        TestBuffer<2> b2(BufferFlags::Circular, 3, 2);
-        const TestBuffer<1> cb1(BufferFlags::Circular, 5);
-        const TestBuffer<2> cb2(BufferFlags::Circular, 3, 2);
+    // {
+    //     TestBuffer<1> b1(BufferFlags::Circular, 5);
+    //     TestBuffer<2> b2(BufferFlags::Circular, 3, 2);
+    //     const TestBuffer<1> cb1(BufferFlags::Circular, 5);
+    //     const TestBuffer<2> cb2(BufferFlags::Circular, 3, 2);
 
-        for (const test_data_t& element : b1)
-            EXPECT_EQ(element, 0);
+    //     for (const test_data_t& element : b1)
+    //         EXPECT_EQ(element, 0);
 
-        for (const test_data_t& element : b2)
-            EXPECT_EQ(element, 0);
+    //     for (const test_data_t& element : b2)
+    //         EXPECT_EQ(element, 0);
 
-        for (const test_data_t& element : cb1)
-            EXPECT_EQ(element, 0);
+    //     for (const test_data_t& element : cb1)
+    //         EXPECT_EQ(element, 0);
 
-        for (const test_data_t& element : cb2)
-            EXPECT_EQ(element, 0);
-    }
+    //     for (const test_data_t& element : cb2)
+    //         EXPECT_EQ(element, 0);
+    // }
 
-    {
-        TestBuffer<1> b1 = { 1, 2, 3, 4, 5 };
-        TestBuffer<2> b2 = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12} };
+    // {
+    //     TestBuffer<1> b1 = { 1, 2, 3, 4, 5 };
+    //     TestBuffer<2> b2 = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12} };
 
-        EXPECT_EQ(b1.Size(), 5);
-        EXPECT_EQ(b2.Size(0), 3);
-        EXPECT_EQ(b2.Size(1), 4);
+    //     EXPECT_EQ(b1.Size(), 5);
+    //     EXPECT_EQ(b2.Size(0), 3);
+    //     EXPECT_EQ(b2.Size(1), 4);
 
-        for (size_t i = 0; i < b1.Size(); ++i)
-            EXPECT_EQ(b1[i], (i + 1));
+    //     for (size_t i = 0; i < b1.Size(); ++i)
+    //         EXPECT_EQ(b1[i], (i + 1));
 
-        for (size_t i = 0, k = 1; i < b2.Size(0); ++i)
-            for (size_t j = 0; j < b2.Size(1); ++j, ++k)
-                EXPECT_EQ((b2[i, j]), k);
+    //     for (size_t i = 0, k = 1; i < b2.Size(0); ++i)
+    //         for (size_t j = 0; j < b2.Size(1); ++j, ++k)
+    //             EXPECT_EQ((b2[i, j]), k);
 
-        b1.SetFlags(BufferFlags::Circular);
-        b2.SetFlags(BufferFlags::Circular);
+    //     b1.SetFlags(BufferFlags::Circular);
+    //     b2.SetFlags(BufferFlags::Circular);
 
-        EXPECT_EQ(b1[b1.Size() + 2], b1[2]);
-        EXPECT_EQ(b1[b1.Size() + 3], b1[3]);
+    //     EXPECT_EQ(b1[b1.Size() + 2], b1[2]);
+    //     EXPECT_EQ(b1[b1.Size() + 3], b1[3]);
 
-        EXPECT_EQ((b2[0, b2.Size(1) + 2]), (b2[0, 2]));
-        EXPECT_EQ((b2[0, b2.Size(1) + 3]), (b2[0, 3]));
+    //     EXPECT_EQ((b2[0, b2.Size(1) + 2]), (b2[0, 2]));
+    //     EXPECT_EQ((b2[0, b2.Size(1) + 3]), (b2[0, 3]));
 
-        EXPECT_EQ((b2[b2.Size(0) + 1, 0]), (b2[1, 0]));
-        EXPECT_EQ((b2[b2.Size(0) + 2, 0]), (b2[2, 0]));
-    }
+    //     EXPECT_EQ((b2[b2.Size(0) + 1, 0]), (b2[1, 0]));
+    //     EXPECT_EQ((b2[b2.Size(0) + 2, 0]), (b2[2, 0]));
+    // }
 }
 
 TEST(HephTest, Buffer_Copy)
@@ -216,37 +216,37 @@ TEST(HephTest, Buffer_Move)
     }
 }
 
-TEST(HephTest, Buffer_Circular)
-{
-    {
-        constexpr test_data_t expected[8] = { 1, 2, 3, 4, 1, 2, 3, 4 };
-        TestBuffer<1> b = { 1, 2, 3, 4 };
+// TEST(HephTest, Buffer_Circular)
+// {
+//     {
+//         constexpr test_data_t expected[8] = { 1, 2, 3, 4, 1, 2, 3, 4 };
+//         TestBuffer<1> b = { 1, 2, 3, 4 };
 
-        b.SetFlags(BufferFlags::Circular);
-        auto it = b.cend() - 1;
-        for (size_t i = 0; i < 8; ++i, --it)
-        {
-            EXPECT_EQ(b[i], expected[i]);
-            EXPECT_EQ(*it, expected[7 - i]);
-        }
-    }
+//         b.SetFlags(BufferFlags::Circular);
+//         auto it = b.cend() - 1;
+//         for (size_t i = 0; i < 8; ++i, --it)
+//         {
+//             EXPECT_EQ(b[i], expected[i]);
+//             EXPECT_EQ(*it, expected[7 - i]);
+//         }
+//     }
 
-    {
-        constexpr test_data_t expected[8][2] = { {1, 2}, {3, 4}, {5, 6}, {7, 8}, {1, 2}, {3, 4}, {5, 6}, {7, 8} };
-        TestBuffer<2> b = { {1, 2}, {3, 4}, {5, 6}, {7, 8} };
+//     {
+//         constexpr test_data_t expected[8][2] = { {1, 2}, {3, 4}, {5, 6}, {7, 8}, {1, 2}, {3, 4}, {5, 6}, {7, 8} };
+//         TestBuffer<2> b = { {1, 2}, {3, 4}, {5, 6}, {7, 8} };
 
-        b.SetFlags(BufferFlags::Circular);
-        auto it = b.cend() - 1;
-        for (size_t i = 0; i < 8; ++i)
-        {
-            for (size_t j = 0; j < 2; ++j, --it)
-            {
-                EXPECT_EQ((b[i, j]), expected[i][j]);
-                EXPECT_EQ(*it, expected[7 - i][1 - j]);
-            }
-        }
-    }
-}
+//         b.SetFlags(BufferFlags::Circular);
+//         auto it = b.cend() - 1;
+//         for (size_t i = 0; i < 8; ++i)
+//         {
+//             for (size_t j = 0; j < 2; ++j, --it)
+//             {
+//                 EXPECT_EQ((b[i, j]), expected[i][j]);
+//                 EXPECT_EQ(*it, expected[7 - i][1 - j]);
+//             }
+//         }
+//     }
+// }
 
 TEST(HephTest, Buffer_Reset)
 {
@@ -775,17 +775,16 @@ TEST(HephTest, Buffer_Transpose)
         TestBuffer<1> b1;
         TestBuffer<2> b2;
 
-        EXPECT_THROW(b1.Transpose(0), InvalidOperationException);
-        EXPECT_THROW(b2.Transpose(0, 2), InvalidArgumentException);
-        EXPECT_THROW(b2.Transpose(1, 1), InvalidArgumentException);
+        EXPECT_THROW(b1.Transpose(TransposeMode::Normal, 0), InvalidOperationException);
+        EXPECT_THROW(b2.Transpose(TransposeMode::Normal, 0, 2), InvalidArgumentException);
+        EXPECT_THROW(b2.Transpose(TransposeMode::Normal, 1, 1), InvalidArgumentException);
     }
 
     {
         test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
         TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
 
-        b.SetFlags(BufferFlags::TransposeInPlace);
-        b.Transpose(1, 0);
+        b.Transpose(TransposeMode::InPlace, 1, 0);
 
         EXPECT_EQ(b.Size(0), 3);
         EXPECT_EQ(b.Size(1), 2);
@@ -799,7 +798,7 @@ TEST(HephTest, Buffer_Transpose)
         test_data_t expected[3][2] = { {1, 4}, {2, 5}, {3, 6} };
         TestBuffer<2> b = { {1, 2, 3}, {4, 5, 6} };
 
-        b.Transpose(1, 0);
+        b.Transpose(TransposeMode::Normal, 1, 0);
 
         EXPECT_EQ(b.Size(0), 3);
         EXPECT_EQ(b.Size(1), 2);
