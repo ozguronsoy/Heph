@@ -48,6 +48,7 @@ namespace Heph
     *
     * @tparam TData Type of the elements stored in buffer. Must be default constructible and trivally destructible.
     * @tparam NDimensions Number of dimensions.
+    * @tparam TIterator Type of the iterator.
     */
     template <
         BufferElement TData,
@@ -66,18 +67,18 @@ namespace Heph
         using reverse_iterator = std::reverse_iterator<iterator>;
         /** @brief Type of the constant reverse iterator used by the Buffer. */
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-        /** @copybrief iterator::buffer_size_t */
+        /** @copybrief BufferIteratorTraits::buffer_size_t */
         using buffer_size_t = iterator::buffer_size_t;
-        /** @copybrief iterator::buffer_index_t */
+        /** @copybrief BufferIteratorTraits::buffer_index_t */
         using buffer_index_t = iterator::buffer_index_t;
 
         /** @brief Type of the initializer list. */
         using InitializerList = typename BufferInitializerListHelper<TData, NDimensions>::type;
 
     public:
-        /** @copybrief iterator::BUFFER_SIZE_ZERO */
+        /** @copybrief BufferIteratorTraits::BUFFER_SIZE_ZERO */
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
-        /** @copybrief iterator::BUFFER_INDEX_ZERO */
+        /** @copybrief BufferIteratorTraits::BUFFER_INDEX_ZERO */
         static constexpr buffer_index_t BUFFER_INDEX_ZERO = iterator::BUFFER_INDEX_ZERO;
 
     protected:

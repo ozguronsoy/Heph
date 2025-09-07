@@ -16,6 +16,7 @@ namespace Heph
      *
      * @tparam TData Type of the elements stored in buffer.
      * @tparam NDimensions Number of dimensions.
+     * @tparam TIterator Type of the iterator.
      */
     template <
         BufferElement TData,

@@ -24,7 +24,7 @@ namespace Heph
     class HEPH_API BufferIterator final
     {
     public:
-        /** @brief @copybrief BufferIteratorTraits<TData, NDimensions> */
+        /** @copybrief BufferIteratorTraits */
         using Traits = BufferIteratorTraits<TData, NDimensions>;
 
         /** @brief Difference type for std::iterator_traits. */
