@@ -35,12 +35,12 @@ namespace Heph
     };
 
     /** @brief Specifies how the transpose operation modifies the buffer. */
-    enum TransposeMode : bool
+    enum TransposeMode
     {
         /** @brief Specifies that both memory and strides will be modified. */
-        Normal = false,
+        Normal,
         /** @brief Specifies that only strides will be modified, not the memory. */
-        InPlace = true
+        InPlace
     };
 
     /**
@@ -49,15 +49,19 @@ namespace Heph
     * @tparam TData Type of the elements stored in buffer. Must be default constructible and trivally destructible.
     * @tparam NDimensions Number of dimensions.
     */
-    template <BufferElement TData, size_t NDimensions = 1>
-        requires (NDimensions > 0)
+    template <
+        BufferElement TData,
+        size_t NDimensions = 1,
+        template<typename, size_t> typename TIterator = BufferIterator
+    >
+        requires (NDimensions > 0) && BufferIteratorConcept<TIterator<TData, NDimensions>, TData, NDimensions>
     class HEPH_API Buffer
     {
     public:
         /** @brief Type of the iterator used by the Buffer. */
-        using iterator = BufferIterator<TData, NDimensions>;
+        using iterator = TIterator<TData, NDimensions>;
         /** @brief Type of the constant iterator used by the Buffer. */
-        using const_iterator = BufferIterator<const TData, NDimensions>;
+        using const_iterator = TIterator<const TData, NDimensions>;
         /** @brief Type of the reverse iterator used by the Buffer. */
         using reverse_iterator = std::reverse_iterator<iterator>;
         /** @brief Type of the constant reverse iterator used by the Buffer. */
@@ -75,10 +79,6 @@ namespace Heph
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
         /** @copybrief iterator::BUFFER_INDEX_ZERO */
         static constexpr buffer_index_t BUFFER_INDEX_ZERO = iterator::BUFFER_INDEX_ZERO;
-        /** @brief Specifies that both memory and strides will be modified. */
-        static constexpr bool TRANSPOSE_MODE_NORMAL = false;
-        /** @brief Specifies that only strides will be modified, not the memory. */
-        static constexpr bool TRANSPOSE_MODE_INPLACE = true;
 
     protected:
         /** @brief Pointer to the first element of the buffer, or nullptr if the buffer is empty. */

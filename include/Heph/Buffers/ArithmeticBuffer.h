@@ -17,13 +17,17 @@ namespace Heph
      * @tparam TData Type of the elements stored in buffer.
      * @tparam NDimensions Number of dimensions.
      */
-    template <BufferElement TData, size_t NDimensions = 1>
+    template <
+        BufferElement TData,
+        size_t NDimensions = 1,
+        template<typename, size_t> typename TIterator = BufferIterator
+    >
         requires Arithmetic<TData, TData>&& ArithmeticAssignable<TData, TData>
-    class HEPH_API ArithmeticBuffer : public Buffer<TData, NDimensions>
+    class HEPH_API ArithmeticBuffer : public Buffer<TData, NDimensions, TIterator>
     {
     public:
         /** @brief Base class. */
-        using Buffer = Buffer<TData, NDimensions>;
+        using Buffer = Buffer<TData, NDimensions, TIterator>;
 
         /** @copybrief Buffer::iterator */
         using typename Buffer::iterator;
@@ -575,7 +579,7 @@ namespace Heph
             Buffer::Replace(*this, src, index, srcIndex, size);
         }
 
-        /** @copydoc ArithmeticBuffer::Transpose */
+        /** @copydoc ArithmeticBuffer::Transpose(Enum<TransposeMode>, const buffer_size_t&) */
         void Transpose(Enum<TransposeMode> mode, auto... perm)
         {
             static_assert(sizeof...(perm) == NDimensions, "Invalid number of perm parameters.");

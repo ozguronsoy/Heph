@@ -2,11 +2,8 @@
 #define HEPH_BUFFER_ITERATOR_H
 
 #include "Heph/Utils.h"
-#include "Heph/Concepts.h"
-#include "Heph/Enum.h"
+#include "Heph/Buffers/Iterators/BufferIteratorConcept.h"
 #include "Heph/Exceptions/InvalidArgumentException.h"
-#include <type_traits>
-#include <array>
 #include <functional>
 #include <tuple>
 #include <compare>
@@ -16,10 +13,6 @@
 
 namespace Heph
 {
-    /** @brief Specifies that the type can be stored in a buffer. */
-    template<typename T>
-    concept BufferElement = std::is_default_constructible_v<T> && std::is_trivially_destructible_v<T>;
-
     /**
      * @brief Iterator for Heph::Buffer.
      *
@@ -31,25 +24,28 @@ namespace Heph
     class HEPH_API BufferIterator final
     {
     public:
+        /** @brief @copybrief BufferIteratorTraits<TData, NDimensions> */
+        using Traits = BufferIteratorTraits<TData, NDimensions>;
+
         /** @brief Difference type for std::iterator_traits. */
-        using difference_type = std::ptrdiff_t;
+        using difference_type = typename Traits::difference_type;
         /** @brief Value type for std::iterator_traits. */
-        using value_type = TData;
+        using value_type = typename Traits::value_type;
         /** @brief Pointer type for std::iterator_traits. */
-        using pointer = std::conditional_t<std::is_const_v<value_type>, value_type* const, value_type*>;
+        using pointer = typename Traits::pointer;
         /** @brief Reference type for std::iterator_traits. */
-        using reference = value_type&;
+        using reference = typename Traits::reference;
         /** @brief Iterator tag for std::iterator_traits. */
-        using iterator_category = std::bidirectional_iterator_tag;
+        using iterator_category = typename Traits::iterator_category;
         /** @brief ``size_t`` for 1D buffers, an array of ``size_t`` for multidimensional buffers. */
-        using buffer_size_t = std::conditional_t<NDimensions == 1, size_t, std::array<size_t, NDimensions>>;
+        using buffer_size_t = typename Traits::buffer_size_t;
         /** @brief ``index_t`` for 1D buffers, an array of ``index_t`` for multidimensional buffers. */
-        using buffer_index_t = std::conditional_t<NDimensions == 1, index_t, std::array<index_t, NDimensions>>;
+        using buffer_index_t = typename Traits::buffer_index_t;
 
         /** @brief ``buffer_size_t`` instance with ``0`` for all dimensions. */
-        static constexpr buffer_size_t BUFFER_SIZE_ZERO = {};
+        static constexpr buffer_size_t BUFFER_SIZE_ZERO = Traits::BUFFER_SIZE_ZERO;
         /** @brief ``buffer_index_t`` instance with ``0`` for all dimensions. */
-        static constexpr buffer_index_t BUFFER_INDEX_ZERO = {};
+        static constexpr buffer_index_t BUFFER_INDEX_ZERO = Traits::BUFFER_INDEX_ZERO;
 
     private:
         /** @brief Pointer to pointer to the first element of the buffer. */
