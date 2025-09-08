@@ -28,6 +28,7 @@ Heph is a modern cross-platform C++ library that provides common components that
 All Platforms:
 - C++23 or higher.
 - CMake 3.28.0 or higher.
+- Python for building with the bootstrap script.
 - Doxygen 1.11.0 or higher for building documentation.
 - GTest for building tests.
 
@@ -37,8 +38,8 @@ Linux:
 
 ### Build
 
-You can build the project directly using CMake or by running ``./bootstrap [OPTIONS]``.
-To see available options, run ``./bootstrap.sh --help`` on Linux or ``./bootstrap.ps1 -Help`` on Windows.
+You can build the project directly using CMake or by running ``python bootstrap.py [OPTIONS]``.
+To see available options, run with ``--help``.
 
 CMake options:
 
