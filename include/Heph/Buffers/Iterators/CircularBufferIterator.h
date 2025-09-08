@@ -1,27 +1,21 @@
-#ifndef HEPH_BUFFER_ITERATOR_H
-#define HEPH_BUFFER_ITERATOR_H
+#ifndef CIRCULAR_BUFFER_ITERATOR_H
+#define CIRCULAR_BUFFER_ITERATOR_H
 
-#include "Heph/Utils.h"
 #include "Heph/Buffers/Iterators/BufferIteratorConcept.h"
-#include "Heph/Exceptions/InvalidArgumentException.h"
-#include <functional>
-#include <tuple>
-#include <compare>
-#include <numeric>
 
 /** @file */
 
 namespace Heph
 {
     /**
-     * @brief Default iterator for Heph::Buffer.
+     * @brief Circular iterator for Heph::Buffer.
      *
      * @tparam TData Type of the elements stored in buffer.
      * @tparam NDimensions Number of dimensions.
      */
     template<BufferElement TData, size_t NDimensions>
         requires (NDimensions > 0)
-    class HEPH_API BufferIterator final
+    class HEPH_API CircularBufferIterator final
     {
     public:
         /** @copybrief BufferIteratorTraits */
@@ -65,7 +59,7 @@ namespace Heph
          * @param size Buffer size.
          * @param strides Buffer strides.
          */
-        BufferIterator(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides)
+        CircularBufferIterator(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides)
             : ppData(&ptr), pSize(&size), pStrides(&strides), indices(BUFFER_INDEX_ZERO)
         {
         }
@@ -73,7 +67,7 @@ namespace Heph
         /** Gets the element referenced by the iterator. */
         reference operator*()
         {
-            return BufferIterator::Get<false>(*this->ppData, *this->pSize, *this->pStrides, this->indices);
+            return CircularBufferIterator::Get<false>(*this->ppData, *this->pSize, *this->pStrides, this->indices);
         }
 
         /** Provides pointer-like access to the element referenced by the iterator. */
@@ -87,9 +81,9 @@ namespace Heph
          *
          * @param i The value to add to the last dimension.
          */
-        BufferIterator operator+(index_t i) const
+        CircularBufferIterator operator+(index_t i) const
         {
-            BufferIterator result = *this;
+            CircularBufferIterator result = *this;
             result += i;
             return result;
         }
@@ -101,9 +95,9 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), BufferIterator> operator+(const buffer_index_t& rhs) const
+        typename std::enable_if_t<(NDim > 1), CircularBufferIterator> operator+(const buffer_index_t& rhs) const
         {
-            BufferIterator result = *this;
+            CircularBufferIterator result = *this;
             result += rhs;
             return result;
         }
@@ -113,7 +107,7 @@ namespace Heph
          *
          * @param i The value to add to the last dimension.
          */
-        BufferIterator& operator+=(index_t i)
+        CircularBufferIterator& operator+=(index_t i)
         {
             this->IncrementIndex(NDimensions - 1, i);
 
@@ -127,7 +121,7 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), BufferIterator&> operator+=(const buffer_index_t& rhs)
+        typename std::enable_if_t<(NDim > 1), CircularBufferIterator&> operator+=(const buffer_index_t& rhs)
         {
             for (size_t i = 0; i < NDimensions; ++i)
             {
@@ -142,9 +136,9 @@ namespace Heph
          *
          * @param i The value to subtract from the last dimension.
          */
-        BufferIterator operator-(index_t i) const
+        CircularBufferIterator operator-(index_t i) const
         {
-            BufferIterator result = *this;
+            CircularBufferIterator result = *this;
             result -= i;
             return result;
         }
@@ -156,9 +150,9 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), BufferIterator> operator-(const buffer_index_t& rhs) const
+        typename std::enable_if_t<(NDim > 1), CircularBufferIterator> operator-(const buffer_index_t& rhs) const
         {
-            BufferIterator result = *this;
+            CircularBufferIterator result = *this;
             result -= rhs;
             return result;
         }
@@ -168,7 +162,7 @@ namespace Heph
          *
          * @param i The value to subtract from the last dimension.
          */
-        BufferIterator& operator-=(index_t i)
+        CircularBufferIterator& operator-=(index_t i)
         {
             this->DecrementIndex(NDimensions - 1, i);
             return *this;
@@ -181,7 +175,7 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), BufferIterator&> operator-=(const buffer_index_t& rhs)
+        typename std::enable_if_t<(NDim > 1), CircularBufferIterator&> operator-=(const buffer_index_t& rhs)
         {
             for (size_t i = 0; i < NDimensions; ++i)
             {
@@ -192,7 +186,7 @@ namespace Heph
         }
 
         /** Moves the iterator forward by one. */
-        BufferIterator& operator++()
+        CircularBufferIterator& operator++()
         {
             if constexpr (NDimensions == 1) this->indices++;
             else this->IncrementIndex(NDimensions - 1);
@@ -201,15 +195,15 @@ namespace Heph
         }
 
         /** @copydoc operator++ */
-        BufferIterator& operator++(int)
+        CircularBufferIterator& operator++(int)
         {
-            BufferIterator temp = *this;
+            CircularBufferIterator temp = *this;
             this->operator++();
             return temp;
         }
 
         /** Moves the iterator backwards by one. */
-        BufferIterator& operator--()
+        CircularBufferIterator& operator--()
         {
             if constexpr (NDimensions == 1) this->indices--;
             else this->DecrementIndex(NDimensions - 1);
@@ -218,15 +212,15 @@ namespace Heph
         }
 
         /** @copydoc operator-- */
-        BufferIterator& operator--(int)
+        CircularBufferIterator& operator--(int)
         {
-            BufferIterator temp = *this;
+            CircularBufferIterator temp = *this;
             this->operator--();
             return temp;
         }
 
         /** Compares the current iterator with another for ordering based on indices. */
-        auto operator<=>(const BufferIterator& rhs) const
+        auto operator<=>(const CircularBufferIterator& rhs) const
         {
             if (this->indices == rhs.indices)
                 return std::weak_ordering::equivalent;
@@ -250,7 +244,7 @@ namespace Heph
         }
 
         /** Checks whether both iterators belong to same buffer and at the same position. */
-        bool operator==(const BufferIterator& rhs) const
+        bool operator==(const CircularBufferIterator& rhs) const
         {
             return this->ppData == rhs.ppData && this->indices == rhs.indices;
         }
@@ -327,7 +321,7 @@ namespace Heph
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
 
             const buffer_index_t indicesArray = { std::forward<index_t>(static_cast<index_t>(indices))... };
-            return BufferIterator::Get<CheckErrors>(ptr, size, strides, indicesArray);
+            return CircularBufferIterator::Get<CheckErrors>(ptr, size, strides, indicesArray);
         }
 
         /**
@@ -343,30 +337,13 @@ namespace Heph
         {
             if constexpr (NDimensions == 1)
             {
-                if constexpr (CheckErrors)
-                {
-                    if (indices < 0 || indices >= size)
-                    {
-                        HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
-                    }
-                }
-
-                return ptr[indices];
+                return ptr[indices % size];
             }
             else
             {
-                if constexpr (CheckErrors)
-                {
-                    for (size_t i = 0; i < NDimensions; ++i)
-                    {
-                        if (indices[i] < 0 || indices[i] >= size[i])
-                        {
-                            HEPH_EXCEPTION_RAISE_AND_THROW(InvalidArgumentException, HEPH_FUNC, "Index out of bounds.");
-                        }
-                    }
-                }
-
-                const index_t n = std::inner_product(indices.begin(), indices.end(), strides.begin(), 0);
+                index_t n = 0;
+                for (size_t i = 0; i < NDimensions; ++i)
+                    n += (indices[i] % size[i]) * strides[i];
                 return ptr[n];
             }
         }

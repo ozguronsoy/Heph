@@ -1,15 +1,19 @@
 #include <gtest/gtest.h>
 #include "Heph/Buffers/Buffer.h"
+#include "Heph/Buffers/Iterators/CircularBufferIterator.h"
 
 using namespace Heph;
 using test_data_t = int;
 
-template<size_t NDimensions>
+template<
+    size_t NDimensions,
+    template<typename, size_t> typename TIterator = BufferIterator
+>
     requires (NDimensions > 0 && NDimensions <= 2)
-class TestBuffer : public Buffer<test_data_t, NDimensions>
+class TestBuffer : public Buffer<test_data_t, NDimensions, TIterator>
 {
 public:
-    using Base = Buffer<test_data_t, NDimensions>;
+    using Base = Buffer<test_data_t, NDimensions, TIterator>;
     using typename Base::iterator;
     using typename Base::const_iterator;
     using typename Base::buffer_size_t;
@@ -143,52 +147,54 @@ TEST(HephTest, Buffer_Constructors)
             EXPECT_EQ(element, 0);
     }
 
-    // {
-    //     TestBuffer<1> b1(BufferFlags::Circular, 5);
-    //     TestBuffer<2> b2(BufferFlags::Circular, 3, 2);
-    //     const TestBuffer<1> cb1(BufferFlags::Circular, 5);
-    //     const TestBuffer<2> cb2(BufferFlags::Circular, 3, 2);
+    {
+        TestBuffer<1, CircularBufferIterator> b1(5);
+        TestBuffer<2, CircularBufferIterator> b2(3, 2);
+        const TestBuffer<1, CircularBufferIterator> cb1(5);
+        const TestBuffer<2, CircularBufferIterator> cb2(3, 2);
 
-    //     for (const test_data_t& element : b1)
-    //         EXPECT_EQ(element, 0);
+        for (const test_data_t& element : b1)
+            EXPECT_EQ(element, 0);
 
-    //     for (const test_data_t& element : b2)
-    //         EXPECT_EQ(element, 0);
+        for (const test_data_t& element : b2)
+            EXPECT_EQ(element, 0);
 
-    //     for (const test_data_t& element : cb1)
-    //         EXPECT_EQ(element, 0);
+        for (const test_data_t& element : cb1)
+            EXPECT_EQ(element, 0);
 
-    //     for (const test_data_t& element : cb2)
-    //         EXPECT_EQ(element, 0);
-    // }
+        for (const test_data_t& element : cb2)
+            EXPECT_EQ(element, 0);
+    }
 
-    // {
-    //     TestBuffer<1> b1 = { 1, 2, 3, 4, 5 };
-    //     TestBuffer<2> b2 = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12} };
+    {
+        TestBuffer<1> b1 = { 1, 2, 3, 4, 5 };
+        TestBuffer<2> b2 = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12} };
 
-    //     EXPECT_EQ(b1.Size(), 5);
-    //     EXPECT_EQ(b2.Size(0), 3);
-    //     EXPECT_EQ(b2.Size(1), 4);
+        EXPECT_EQ(b1.Size(), 5);
+        EXPECT_EQ(b2.Size(0), 3);
+        EXPECT_EQ(b2.Size(1), 4);
 
-    //     for (size_t i = 0; i < b1.Size(); ++i)
-    //         EXPECT_EQ(b1[i], (i + 1));
+        for (size_t i = 0; i < b1.Size(); ++i)
+            EXPECT_EQ(b1[i], (i + 1));
 
-    //     for (size_t i = 0, k = 1; i < b2.Size(0); ++i)
-    //         for (size_t j = 0; j < b2.Size(1); ++j, ++k)
-    //             EXPECT_EQ((b2[i, j]), k);
+        for (size_t i = 0, k = 1; i < b2.Size(0); ++i)
+            for (size_t j = 0; j < b2.Size(1); ++j, ++k)
+                EXPECT_EQ((b2[i, j]), k);
+    }
 
-    //     b1.SetFlags(BufferFlags::Circular);
-    //     b2.SetFlags(BufferFlags::Circular);
+    {
+        TestBuffer<1, CircularBufferIterator> b1 = { 1, 2, 3, 4, 5 };
+        TestBuffer<2, CircularBufferIterator> b2 = { {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12} };
 
-    //     EXPECT_EQ(b1[b1.Size() + 2], b1[2]);
-    //     EXPECT_EQ(b1[b1.Size() + 3], b1[3]);
+        EXPECT_EQ(b1[b1.Size() + 2], b1[2]);
+        EXPECT_EQ(b1[b1.Size() + 3], b1[3]);
 
-    //     EXPECT_EQ((b2[0, b2.Size(1) + 2]), (b2[0, 2]));
-    //     EXPECT_EQ((b2[0, b2.Size(1) + 3]), (b2[0, 3]));
+        EXPECT_EQ((b2[0, b2.Size(1) + 2]), (b2[0, 2]));
+        EXPECT_EQ((b2[0, b2.Size(1) + 3]), (b2[0, 3]));
 
-    //     EXPECT_EQ((b2[b2.Size(0) + 1, 0]), (b2[1, 0]));
-    //     EXPECT_EQ((b2[b2.Size(0) + 2, 0]), (b2[2, 0]));
-    // }
+        EXPECT_EQ((b2[b2.Size(0) + 1, 0]), (b2[1, 0]));
+        EXPECT_EQ((b2[b2.Size(0) + 2, 0]), (b2[2, 0]));
+    }
 }
 
 TEST(HephTest, Buffer_Copy)
@@ -216,37 +222,35 @@ TEST(HephTest, Buffer_Move)
     }
 }
 
-// TEST(HephTest, Buffer_Circular)
-// {
-//     {
-//         constexpr test_data_t expected[8] = { 1, 2, 3, 4, 1, 2, 3, 4 };
-//         TestBuffer<1> b = { 1, 2, 3, 4 };
+TEST(HephTest, Buffer_Circular)
+{
+    {
+        constexpr test_data_t expected[8] = { 1, 2, 3, 4, 1, 2, 3, 4 };
+        TestBuffer<1, CircularBufferIterator> b = { 1, 2, 3, 4 };
 
-//         b.SetFlags(BufferFlags::Circular);
-//         auto it = b.cend() - 1;
-//         for (size_t i = 0; i < 8; ++i, --it)
-//         {
-//             EXPECT_EQ(b[i], expected[i]);
-//             EXPECT_EQ(*it, expected[7 - i]);
-//         }
-//     }
+        auto it = b.cend() - 1;
+        for (size_t i = 0; i < 8; ++i, --it)
+        {
+            EXPECT_EQ(b[i], expected[i]);
+            EXPECT_EQ(*it, expected[7 - i]);
+        }
+    }
 
-//     {
-//         constexpr test_data_t expected[8][2] = { {1, 2}, {3, 4}, {5, 6}, {7, 8}, {1, 2}, {3, 4}, {5, 6}, {7, 8} };
-//         TestBuffer<2> b = { {1, 2}, {3, 4}, {5, 6}, {7, 8} };
+    {
+        constexpr test_data_t expected[8][2] = { {1, 2}, {3, 4}, {5, 6}, {7, 8}, {1, 2}, {3, 4}, {5, 6}, {7, 8} };
+        TestBuffer<2, CircularBufferIterator> b = { {1, 2}, {3, 4}, {5, 6}, {7, 8} };
 
-//         b.SetFlags(BufferFlags::Circular);
-//         auto it = b.cend() - 1;
-//         for (size_t i = 0; i < 8; ++i)
-//         {
-//             for (size_t j = 0; j < 2; ++j, --it)
-//             {
-//                 EXPECT_EQ((b[i, j]), expected[i][j]);
-//                 EXPECT_EQ(*it, expected[7 - i][1 - j]);
-//             }
-//         }
-//     }
-// }
+        auto it = b.cend() - 1;
+        for (size_t i = 0; i < 8; ++i)
+        {
+            for (size_t j = 0; j < 2; ++j, --it)
+            {
+                EXPECT_EQ((b[i, j]), expected[i][j]);
+                EXPECT_EQ(*it, expected[7 - i][1 - j]);
+            }
+        }
+    }
+}
 
 TEST(HephTest, Buffer_Reset)
 {

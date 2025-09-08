@@ -730,7 +730,7 @@ namespace Heph
         }
     };
 
-    using DoubleBuffer = ArithmeticBuffer<double, 1>;
+    using RealBuffer = ArithmeticBuffer<double, 1>;
     extern template class ArithmeticBuffer<double, 1>;
 
     using ComplexBuffer = ArithmeticBuffer<std::complex<double>, 1>;

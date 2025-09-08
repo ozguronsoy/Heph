@@ -186,10 +186,10 @@ namespace Heph
             if constexpr (NDimensions == 1)
             {
                 Buffer::Reallocate(this->pData, 0, rhs.size());
-                (void)std::copy(rhs.begin(), rhs.end(), this->begin());
-
                 this->size = rhs.size();
                 this->CalcStrides();
+
+                (void)std::copy(rhs.begin(), rhs.end(), this->begin());
             }
             else
             {
