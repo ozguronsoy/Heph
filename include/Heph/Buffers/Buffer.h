@@ -700,7 +700,7 @@ namespace Heph
                 newSize[0] = size;
             }
 
-            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize), ALLOC_UNINITIALIZED);
+            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize), ALLOC_INITIALIZED);
             dest.size = newSize;
             dest.CalcStrides();
 
@@ -712,8 +712,8 @@ namespace Heph
             if constexpr (NDimensions == 1)
             {
                 (void)std::copy(
-                    src.pData + index,
-                    src.pData + index + size,
+                    (src.pData + index),
+                    (src.pData + index + size),
                     dest.pData
                 );
             }
