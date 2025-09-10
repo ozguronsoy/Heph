@@ -75,6 +75,11 @@ namespace Heph
         /** @brief Type of the initializer list. */
         using InitializerList = typename BufferInitializerListHelper<TData, NDimensions>::type;
 
+        /** Specifies the memory will not be initialized after allocation. */
+        static constexpr bool ALLOC_UNINITIALIZED = false;
+        /** Specifies the memory will be initialized after allocation. */
+        static constexpr bool ALLOC_INITIALIZED = true;
+
     public:
         /** @copybrief BufferIteratorTraits::BUFFER_SIZE_ZERO */
         static constexpr buffer_size_t BUFFER_SIZE_ZERO = iterator::BUFFER_SIZE_ZERO;
@@ -84,10 +89,8 @@ namespace Heph
     protected:
         /** @brief Pointer to the first element of the buffer, or nullptr if the buffer is empty. */
         TData* pData;
-
         /** @brief Number of elements in each dimension the buffer stores. */
         buffer_size_t size;
-
         /** @brief Number of elements to advance in one step for each dimension. */
         buffer_size_t strides;
 
@@ -113,7 +116,7 @@ namespace Heph
             const size_t elementCount = this->ElementCount();
             if (elementCount > 0)
             {
-                this->pData = Buffer::Allocate(elementCount);
+                this->pData = Buffer::Allocate(elementCount, ALLOC_INITIALIZED);
             }
 
             this->CalcStrides();
@@ -126,12 +129,12 @@ namespace Heph
          * @exception InsufficientMemoryException
          */
         explicit Buffer(const buffer_size_t& size)
-            : pData(nullptr), size(size)
+            : pData(nullptr), size(size), strides(BUFFER_SIZE_ZERO)
         {
             const size_t elementCount = this->ElementCount();
             if (elementCount > 0)
             {
-                this->pData = Buffer::Allocate(elementCount);
+                this->pData = Buffer::Allocate(elementCount, ALLOC_INITIALIZED);
             }
             this->CalcStrides();
         }
@@ -144,21 +147,21 @@ namespace Heph
          * @exception InsufficientMemoryException
          */
         Buffer(const InitializerList& rhs)
-            : pData(nullptr)
+            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
         {
             *this = rhs;
         }
 
         /** @copydoc copy_constructor */
         Buffer(const Buffer& rhs)
-            : pData(nullptr)
+            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
         {
             *this = rhs;
         }
 
         /** @copydoc move_constructor */
         Buffer(Buffer&& rhs) noexcept
-            : pData(nullptr)
+            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
         {
             *this = std::move(rhs);
         }
@@ -179,13 +182,11 @@ namespace Heph
          */
         Buffer& operator=(const InitializerList& rhs)
         {
-            this->Release();
-
             if (rhs.size() == 0) return *this;
 
             if constexpr (NDimensions == 1)
             {
-                Buffer::Reallocate(this->pData, 0, rhs.size());
+                Buffer::Reallocate(this->pData, 0, rhs.size(), ALLOC_UNINITIALIZED);
                 this->size = rhs.size();
                 this->CalcStrides();
 
@@ -200,7 +201,7 @@ namespace Heph
 
                     if (temp.ElementCount() == 0) return *this;
 
-                    Buffer::Reallocate(this->pData, 0, temp.ElementCount() * rhs.size());
+                    Buffer::Reallocate(this->pData, 0, temp.ElementCount() * rhs.size(), ALLOC_UNINITIALIZED);
                     if constexpr (NDimensions == 2)
                         this->size[1] = temp.Size();
                     else
@@ -249,16 +250,14 @@ namespace Heph
         {
             if (&rhs != this)
             {
-                this->Release();
-
-                this->size = rhs.size;
-                this->strides = rhs.strides;
-
-                const size_t elementCount = rhs.ElementCount();
-                if (elementCount > 0)
+                const size_t newElementCount = rhs.ElementCount();
+                if (newElementCount > 0)
                 {
-                    this->pData = Buffer::Allocate(elementCount);
-                    (void)std::copy(rhs.begin(), rhs.end(), this->begin());
+                    Buffer::Reallocate(this->pData, this->ElementCount(), newElementCount, ALLOC_UNINITIALIZED);
+                    this->size = rhs.size;
+                    this->strides = rhs.strides;
+
+                    (void)std::copy(rhs.pData, rhs.pData + newElementCount, this->pData);
                 }
             }
 
@@ -412,9 +411,7 @@ namespace Heph
         void Reset()
         {
             if (!this->IsEmpty())
-            {
                 std::fill(this->begin(), this->end(), TData());
-            }
         }
 
         /** Releases the resources. */
@@ -433,13 +430,13 @@ namespace Heph
         /** Returns an iterator to the beginning. */
         iterator begin()
         {
-            return iterator(this->pData, this->size, this->strides);
+            return iterator(this->pData, this->size, this->strides, BUFFER_INDEX_ZERO);
         }
 
         /** @copydoc begin */
         const_iterator begin() const
         {
-            return const_iterator(this->pData, this->size, this->strides);
+            return const_iterator(this->pData, this->size, this->strides, BUFFER_INDEX_ZERO);
         }
 
         /** @copydoc begin */
@@ -469,13 +466,15 @@ namespace Heph
         /** Returns an iterator to the end. */
         iterator end()
         {
-            return this->begin() + this->ElementCount();
+            const buffer_index_t indices = { static_cast<index_t>(this->Size(0)) };
+            return iterator(this->pData, this->size, this->strides, indices);
         }
 
         /** @copydoc end */
         const_iterator end() const
         {
-            return this->begin() + this->ElementCount();
+            const buffer_index_t indices = { static_cast<index_t>(this->Size(0)) };
+            return const_iterator(this->pData, this->size, this->strides, indices);
         }
 
         /** @copydoc end */
@@ -531,11 +530,12 @@ namespace Heph
          * Allocates memory.
          *
          * @param elementCount Number of elements to allocate.
+         * @param init Indicates whether to initialize the memory after successfull allocation.
          * @return Pointer to the allocated memory.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static TData* Allocate(size_t elementCount)
+        static TData* Allocate(size_t elementCount, bool init)
         {
             if (elementCount == 0)
             {
@@ -548,11 +548,14 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to allocate {} bytes.", elementCount * sizeof(TData)));
             }
 
-            std::fill(
-                pData,
-                (pData + elementCount),
-                TData()
-            );
+            if (init)
+            {
+                std::fill(
+                    pData,
+                    (pData + elementCount),
+                    TData()
+                );
+            }
 
             return pData;
         }
@@ -563,10 +566,11 @@ namespace Heph
          * @param pData Pointer to the data that will be reallocated.
          * @param oldElementCount Old number of elements.
          * @param newElementCount New number of elements.
+         * @param init Indicates whether to initialize the memory after successfull allocation.
          * @exception InvalidArgumentException
          * @exception InsufficientMemoryException
          */
-        static void Reallocate(TData*& pData, size_t oldElementCount, size_t newElementCount)
+        static void Reallocate(TData*& pData, size_t oldElementCount, size_t newElementCount, bool init)
         {
             if (newElementCount == 0)
             {
@@ -579,7 +583,7 @@ namespace Heph
                 HEPH_EXCEPTION_RAISE_AND_THROW(InsufficientMemoryException, HEPH_FUNC, std::format("Failed to reallocate {} bytes.", newElementCount * sizeof(TData)));
             }
 
-            if (newElementCount > oldElementCount)
+            if (init && newElementCount > oldElementCount)
             {
                 std::fill(
                     (pTemp + oldElementCount),
@@ -696,7 +700,7 @@ namespace Heph
                 newSize[0] = size;
             }
 
-            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize));
+            Buffer::Reallocate(dest.pData, Buffer::ElementCount(oldSize), Buffer::ElementCount(newSize), ALLOC_UNINITIALIZED);
             dest.size = newSize;
             dest.CalcStrides();
 
@@ -705,6 +709,15 @@ namespace Heph
                 size = src.Size(0) - index;
             }
 
+            if constexpr (NDimensions == 1)
+            {
+                (void)std::copy(
+                    src.pData + index,
+                    src.pData + index + size,
+                    dest.pData
+                );
+            }
+            else
             {
                 const_iterator itSrcStart = src.cbegin();
                 itSrcStart.IncrementIndex(0, index);
@@ -741,7 +754,7 @@ namespace Heph
                 }
             }
 
-            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount());
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), ALLOC_UNINITIALIZED);
 
             if (&dest == &src)
             {
@@ -787,7 +800,7 @@ namespace Heph
                 }
             }
 
-            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount());
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), ALLOC_UNINITIALIZED);
             (void)std::copy(src.begin(), src.end(), dest.end()); // dest size is not updated yet
 
             if constexpr (NDimensions == 1) dest.size += src.size;
@@ -831,7 +844,7 @@ namespace Heph
                 }
             }
 
-            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount());
+            Buffer::Reallocate(dest.pData, dest.ElementCount(), dest.ElementCount() + src.ElementCount(), ALLOC_UNINITIALIZED);
 
             iterator itInsertBegin = dest.begin();
             itInsertBegin.IncrementIndex(0, index);
@@ -1014,7 +1027,7 @@ namespace Heph
 
                 if (!sameInstance)
                 {
-                    Buffer::Reallocate(dest.pData, dest.ElementCount(), src.ElementCount());
+                    Buffer::Reallocate(dest.pData, dest.ElementCount(), src.ElementCount(), ALLOC_UNINITIALIZED);
                     dest.size = src.size;
                     dest.strides = src.strides;
                 }
@@ -1088,7 +1101,7 @@ namespace Heph
             {
                 if constexpr (NDimensions == 1)
                 {
-                    Buffer::Reallocate(buffer.pData, buffer.ElementCount(), newElementCount);
+                    Buffer::Reallocate(buffer.pData, buffer.ElementCount(), newElementCount, ALLOC_INITIALIZED);
                 }
                 else
                 {
@@ -1096,7 +1109,7 @@ namespace Heph
 
                     iterator it = temp.begin();
                     iterator itEnd = temp.end();
-                    for (; it < itEnd; ++it)
+                    for (; it != itEnd; ++it)
                     {
                         const buffer_index_t indices = it.Indices();
                         if (std::ranges::equal(indices, buffer.size, std::less()))
@@ -1141,7 +1154,7 @@ namespace Heph
                 buffer.size[dim] /= 2;
 
                 const iterator itEnd = buffer.end();
-                for (iterator it = buffer.begin(); it < itEnd; ++it)
+                for (iterator it = buffer.begin(); it != itEnd; ++it)
                 {
                     buffer_index_t secondElementIndices = it.Indices();
                     secondElementIndices[dim] = dimSize - secondElementIndices[dim] - 1;

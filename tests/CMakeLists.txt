@@ -28,7 +28,7 @@ add_executable(
 )
 
 target_link_libraries(
-    HephTests
+    HephTests PRIVATE
     ${HEPH_DEPENDENCY_LIBRARIES}
     gtest
     gtest_main

@@ -1,7 +1,9 @@
 #ifndef CIRCULAR_BUFFER_ITERATOR_H
 #define CIRCULAR_BUFFER_ITERATOR_H
 
+#include "Heph/Utils.h"
 #include "Heph/Buffers/Iterators/BufferIteratorConcept.h"
+#include "Heph/Exceptions/InvalidArgumentException.h"
 
 /** @file */
 
@@ -11,7 +13,7 @@ namespace Heph
      * @brief Circular iterator for Heph::Buffer.
      *
      * @tparam TData Type of the elements stored in buffer.
-     * @tparam NDimensions Number of dimensions.
+     * @tparam NDimensions Number of dimensions the buffer has.
      */
     template<BufferElement TData, size_t NDimensions>
         requires (NDimensions > 0)
@@ -42,12 +44,12 @@ namespace Heph
         static constexpr buffer_index_t BUFFER_INDEX_ZERO = Traits::BUFFER_INDEX_ZERO;
 
     private:
-        /** @brief Pointer to pointer to the first element of the buffer. */
-        pointer* ppData;
+        /** @brief Pointer to the first element of the buffer. */
+        pointer pData;
         /** @brief Pointer to the buffer size. */
-        buffer_size_t const* pSize;
+        const buffer_size_t* pSize;
         /** @brief Pointer to the buffer strides. */
-        buffer_size_t const* pStrides;
+        const buffer_size_t* pStrides;
         /** @brief Current position of the iterator. */
         buffer_index_t indices;
 
@@ -58,16 +60,17 @@ namespace Heph
          * @param ptr Pointer to the first element of the buffer.
          * @param size Buffer size.
          * @param strides Buffer strides.
+         * @param indices Buffer indices.
          */
-        CircularBufferIterator(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides)
-            : ppData(&ptr), pSize(&size), pStrides(&strides), indices(BUFFER_INDEX_ZERO)
+        CircularBufferIterator(pointer ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
+            : pData(ptr), pSize(&size), pStrides(&strides), indices(indices)
         {
         }
 
         /** Gets the element referenced by the iterator. */
         reference operator*()
         {
-            return CircularBufferIterator::Get<false>(*this->ppData, *this->pSize, *this->pStrides, this->indices);
+            return CircularBufferIterator::Get<false>(this->pData, *this->pSize, *this->pStrides, this->indices);
         }
 
         /** Provides pointer-like access to the element referenced by the iterator. */
@@ -219,34 +222,10 @@ namespace Heph
             return temp;
         }
 
-        /** Compares the current iterator with another for ordering based on indices. */
-        auto operator<=>(const CircularBufferIterator& rhs) const
-        {
-            if (this->indices == rhs.indices)
-                return std::weak_ordering::equivalent;
-
-            if constexpr (NDimensions == 1)
-            {
-                return this->indices > rhs.indices ? std::weak_ordering::greater : std::weak_ordering::less;
-            }
-            else
-            {
-                for (size_t i = 0; i < NDimensions; ++i)
-                {
-                    if (this->indices[i] > rhs.indices[i])
-                        return std::weak_ordering::greater;
-                    else if (this->indices[i] < rhs.indices[i])
-                        return std::weak_ordering::less;
-                }
-            }
-
-            return std::weak_ordering::less;
-        }
-
         /** Checks whether both iterators belong to same buffer and at the same position. */
         bool operator==(const CircularBufferIterator& rhs) const
         {
-            return this->ppData == rhs.ppData && this->indices == rhs.indices;
+            return this->pData == rhs.pData && this->indices == rhs.indices;
         }
 
         /** Gets the current indices. */
@@ -315,7 +294,7 @@ namespace Heph
          */
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
+        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer const& ptr, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
@@ -333,7 +312,7 @@ namespace Heph
          * @param strides Buffer strides.
          */
         template<bool CheckErrors>
-        static reference Get(pointer& ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
+        static reference Get(pointer ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
         {
             if constexpr (NDimensions == 1)
             {

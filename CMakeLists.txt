@@ -16,6 +16,7 @@ add_definitions(
 )
 
 option(HEPH_BUILD_TESTS "HEPH_BUILD_TESTS" Off)
+option(HEPH_BUILD_BENCHMARKS "HEPH_BUILD_BENCHMARKS" Off)
 option(HEPH_BUILD_DOCS "HEPH_BUILD_DOCS" Off)
 option(HEPH_BUILD_STATIC "HEPH_BUILD_STATIC" Off)
 option(HEPH_BUILD_SHARED "HEPH_BUILD_SHARED" Off)
@@ -58,6 +59,10 @@ endif()
 
 if(HEPH_BUILD_TESTS)
     add_subdirectory(tests)
+endif()
+
+if(HEPH_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
 
 if(HEPH_BUILD_DOCS)

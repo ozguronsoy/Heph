@@ -32,6 +32,7 @@ options = {
     "--no-cache": False,
 
     "--build-tests": False,
+    "--build-benchmarks": False,
     "--build-docs": False,
     "--static": False,
     "--shared": False,
@@ -129,6 +130,7 @@ def print_help():
   --no-cache              Ignore cache file for this run
 
   --build-tests           Build the unit tests
+  --build-benchmarks      Build the benchmarks
   --build-docs            Build the documentation
 
   --static                Build static libraries
@@ -221,7 +223,7 @@ if __name__ == "__main__":
         if options["--generator"] not in supported_generators:
             options["--generator"] = "Ninja" if platform.system() == "Windows" else "Unix Makefiles"
 
-        cmake_options.extend([f"-DCMAKE_C_COMPILER={c_compiler}", f"DCMAKE_CXX_COMPILER={cpp_compiler}"])
+        cmake_options.extend([f"-DCMAKE_C_COMPILER={c_compiler}", f"-DCMAKE_CXX_COMPILER={cpp_compiler}"])
         cmake_options.extend(["-G", options["--generator"]])
 
     if options["--clang"]:
@@ -233,7 +235,7 @@ if __name__ == "__main__":
         if options["--generator"] not in supported_generators:
             options["--generator"] = "Ninja" if platform.system() == "Windows" else "Unix Makefiles"
 
-        cmake_options.extend([f"-DCMAKE_C_COMPILER={c_compiler}", f"DCMAKE_CXX_COMPILER={cpp_compiler}"])
+        cmake_options.extend([f"-DCMAKE_C_COMPILER={c_compiler}", f"-DCMAKE_CXX_COMPILER={cpp_compiler}"])
         cmake_options.extend(["-G", options["--generator"]])
 
     if options["--msvc"]:
@@ -245,7 +247,7 @@ if __name__ == "__main__":
         if options["--generator"] not in supported_generators:
             options["--generator"] = "Visual Studio 17 2022"
 
-        cmake_options.extend([f"-DCMAKE_C_COMPILER={c_compiler}", f"DCMAKE_CXX_COMPILER={cpp_compiler}"])
+        cmake_options.extend([f"-DCMAKE_C_COMPILER={c_compiler}", f"-DCMAKE_CXX_COMPILER={cpp_compiler}"])
         cmake_options.extend(["-G", options["--generator"]])
 
     if options["--debug"]:
@@ -257,6 +259,8 @@ if __name__ == "__main__":
 
     if options["--build-tests"]:
         cmake_options.append("-DHEPH_BUILD_TESTS=ON")
+    if options["--build-benchmarks"]:
+        cmake_options.append("-DHEPH_BUILD_BENCHMARKS=ON")
     if options["--build-docs"]:
         cmake_options.append("-DHEPH_BUILD_DOCS=ON")
     if options["--static"]:
@@ -283,29 +287,32 @@ if __name__ == "__main__":
         
     try:
         cmd = ["cmake", "-S", ".", "-B", options["--build-dir"]] + cmake_options
-        print_verbose(f"[Heph] Running command: {cmd}")
+        cmd_str = " ".join(cmd)
+        print_verbose(f"[Heph] Running command: {cmd_str}")
         subprocess.run(cmd, check=True)
     except Exception as ex:
-        print(f"{color_error}[Heph] Failed to run command: {cmd}{color_default}")
+        print(f"{color_error}[Heph] Failed to run command: {cmd_str}{color_default}")
         print(f"{color_error}Error {ex}{color_default}")
         sys.exit(1)
 
     try:
         cmd = ["cmake", "--build", options["--build-dir"], "--config", build_type]
-        print_verbose(f"[Heph] Running command: {cmd}")
+        cmd_str = " ".join(cmd)
+        print_verbose(f"[Heph] Running command: {cmd_str}")
         subprocess.run(cmd, check=True)
     except Exception as ex:
-        print(f"{color_error}[Heph] Failed to run command: {cmd}{color_default}")
+        print(f"{color_error}[Heph] Failed to run command: {cmd_str}{color_default}")
         print(f"{color_error}Error {ex}{color_default}")
         sys.exit(1)
 
     if options["--install"]:
         try:
             cmd = ["cmake", "--install", options["--build-dir"], "--config", build_type]
-            print_verbose(f"[Heph] Running command: {cmd}")
+            cmd_str = " ".join(cmd)
+            print_verbose(f"[Heph] Running command: {cmd_str}")
             subprocess.run(cmd, check=True)
         except Exception as ex:
-            print(f"{color_error}[Heph] Failed to run command: {cmd}{color_default}")
+            print(f"{color_error}[Heph] Failed to run command: {cmd_str}{color_default}")
             print(f"{color_error}Error {ex}{color_default}")
             sys.exit(1)
 

@@ -40,7 +40,8 @@ namespace Heph
 
         { it.Indices() } -> std::convertible_to<typename T::buffer_index_t>;
 
-        { it <=> it };
+        { it == it } -> std::same_as<bool>;
+        { it != it } -> std::same_as<bool>;
     }&&
 
         requires(T it, size_t dim, index_t n)
@@ -51,6 +52,7 @@ namespace Heph
 
         requires (T::pointer& ptr, const T::buffer_size_t& size, const T::buffer_size_t& strides, const T::buffer_index_t& indices)
     {
+        { T(ptr, size, strides, indices) } -> std::same_as<T>;
         { T::template Get<true>(ptr, size, strides, indices) } -> std::same_as<typename T::reference>;
         { T::template Get<false>(ptr, size, strides, indices) } -> std::same_as<typename T::reference>;
     };
@@ -64,7 +66,7 @@ namespace Heph
         /** @brief Value type for std::iterator_traits. */
         using value_type = TData;
         /** @brief Pointer type for std::iterator_traits. */
-        using pointer = std::conditional_t<std::is_const_v<value_type>, value_type* const, value_type*>;
+        using pointer = std::conditional_t<std::is_const_v<value_type>, value_type*, value_type*>;
         /** @brief Reference type for std::iterator_traits. */
         using reference = value_type&;
         /** @brief Iterator tag for std::iterator_traits. */
