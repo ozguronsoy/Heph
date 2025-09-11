@@ -147,21 +147,21 @@ namespace Heph
          * @exception InsufficientMemoryException
          */
         Buffer(const InitializerList& rhs)
-            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
+            : Buffer()
         {
             *this = rhs;
         }
 
         /** @copydoc copy_constructor */
         Buffer(const Buffer& rhs)
-            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
+            : Buffer()
         {
             *this = rhs;
         }
 
         /** @copydoc move_constructor */
         Buffer(Buffer&& rhs) noexcept
-            : pData(nullptr), size(BUFFER_SIZE_ZERO), strides(BUFFER_SIZE_ZERO)
+            : Buffer()
         {
             *this = std::move(rhs);
         }
@@ -257,7 +257,7 @@ namespace Heph
                     this->size = rhs.size;
                     this->strides = rhs.strides;
 
-                    (void)std::copy(rhs.pData, rhs.pData + newElementCount, this->pData);
+                    (void)std::copy(rhs.begin(), rhs.end(), this->begin());
                 }
             }
 
@@ -709,24 +709,13 @@ namespace Heph
                 size = src.Size(0) - index;
             }
 
-            if constexpr (NDimensions == 1)
-            {
-                (void)std::copy(
-                    src.pData + index,
-                    src.pData + index + size,
-                    dest.pData
-                );
-            }
-            else
-            {
-                const_iterator itSrcStart = src.cbegin();
-                itSrcStart.IncrementIndex(0, index);
+            const_iterator itSrcStart = src.cbegin();
+            itSrcStart.IncrementIndex(0, index);
 
-                const_iterator itSrcEnd = src.cbegin();
-                itSrcEnd.IncrementIndex(0, index + size);
+            const_iterator itSrcEnd = src.cbegin();
+            itSrcEnd.IncrementIndex(0, index + size);
 
-                (void)std::copy(itSrcStart, itSrcEnd, dest.begin());
-            }
+            (void)std::copy(itSrcStart, itSrcEnd, dest.begin());
         }
 
         /**

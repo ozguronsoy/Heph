@@ -4,6 +4,7 @@
 
 using namespace Heph;
 using test_data_t = int;
+static constexpr benchmark::TimeUnit TIME_UNIT = benchmark::kMillisecond;
 
 template<
     size_t NDimensions,
@@ -25,10 +26,22 @@ public:
     template<typename... Args>
     TestBuffer(Args... args) : Base(std::forward<Args>(args)...) {}
 
+    TestBuffer operator<<(size_t n) const
+    {
+        TestBuffer result = *this;
+        return result <<= n;
+    }
+
     TestBuffer& operator<<=(size_t n)
     {
         Base::ShiftLeft(*this, n);
         return *this;
+    }
+
+    TestBuffer operator>>(size_t n) const
+    {
+        TestBuffer result = *this;
+        return result >>= n;
     }
 
     TestBuffer& operator>>=(size_t n)
@@ -105,9 +118,10 @@ static void BM_BufferCreation1D(benchmark::State& state)
     {
         TestBuffer<1> b(state.range(0));
         benchmark::DoNotOptimize(b);
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_BufferCreation1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferCreation1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorCreation1D(benchmark::State& state)
 {
@@ -115,9 +129,10 @@ static void BM_VectorCreation1D(benchmark::State& state)
     {
         std::vector<test_data_t> v(state.range(0));
         benchmark::DoNotOptimize(v);
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_VectorCreation1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorCreation1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_BufferCopy1D(benchmark::State& state)
 {
@@ -130,9 +145,10 @@ static void BM_BufferCopy1D(benchmark::State& state)
     for (auto _ : state)
     {
         b2 = b1;
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_BufferCopy1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferCopy1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorCopy1D(benchmark::State& state)
 {
@@ -145,9 +161,10 @@ static void BM_VectorCopy1D(benchmark::State& state)
     for (auto _ : state)
     {
         v2 = v1;
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_VectorCopy1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorCopy1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_BufferMove1D(benchmark::State& state)
 {
@@ -160,9 +177,10 @@ static void BM_BufferMove1D(benchmark::State& state)
     for (auto _ : state)
     {
         b2 = std::move(b1);
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_BufferMove1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferMove1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorMove1D(benchmark::State& state)
 {
@@ -175,9 +193,10 @@ static void BM_VectorMove1D(benchmark::State& state)
     for (auto _ : state)
     {
         v2 = std::move(v1);
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_VectorMove1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorMove1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_BufferAccess1D(benchmark::State& state)
 {
@@ -191,12 +210,12 @@ static void BM_BufferAccess1D(benchmark::State& state)
     {
         for (size_t i = 0; i < size; ++i)
         {
-            test_data_t& element = b[i];
-            benchmark::DoNotOptimize(element);
+            benchmark::DoNotOptimize(b[i]);
+            benchmark::ClobberMemory();
         }
     }
 }
-BENCHMARK(BM_BufferAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferAccess1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorAccess1D(benchmark::State& state)
 {
@@ -210,12 +229,12 @@ static void BM_VectorAccess1D(benchmark::State& state)
     {
         for (size_t i = 0; i < size; ++i)
         {
-            test_data_t& element = v[i];
-            benchmark::DoNotOptimize(element);
+            benchmark::DoNotOptimize(v[i]);
+            benchmark::ClobberMemory();
         }
     }
 }
-BENCHMARK(BM_VectorAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorAccess1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_BufferAtAccess1D(benchmark::State& state)
 {
@@ -229,12 +248,12 @@ static void BM_BufferAtAccess1D(benchmark::State& state)
     {
         for (size_t i = 0; i < size; ++i)
         {
-            test_data_t& element = b.At(i);
-            benchmark::DoNotOptimize(element);
+            benchmark::DoNotOptimize(b.At(i));
+            benchmark::ClobberMemory();
         }
     }
 }
-BENCHMARK(BM_BufferAtAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferAtAccess1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorAtAccess1D(benchmark::State& state)
 {
@@ -248,12 +267,12 @@ static void BM_VectorAtAccess1D(benchmark::State& state)
     {
         for (size_t i = 0; i < size; ++i)
         {
-            test_data_t& element = v.at(i);
-            benchmark::DoNotOptimize(element);
+            benchmark::DoNotOptimize(v.at(i));
+            benchmark::ClobberMemory();
         }
     }
 }
-BENCHMARK(BM_VectorAtAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorAtAccess1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_BufferItAccess1D(benchmark::State& state)
 {
@@ -269,12 +288,12 @@ static void BM_BufferItAccess1D(benchmark::State& state)
     {
         for (auto it = itBegin; it != itEnd; ++it)
         {
-            test_data_t& element = *it;
-            benchmark::DoNotOptimize(element);
+            benchmark::DoNotOptimize(*it);
+            benchmark::ClobberMemory();
         }
     }
 }
-BENCHMARK(BM_BufferItAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferItAccess1D)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorItAccess1D(benchmark::State& state)
 {
@@ -290,12 +309,74 @@ static void BM_VectorItAccess1D(benchmark::State& state)
     {
         for (auto it = itBegin; it != itEnd; ++it)
         {
-            test_data_t& element = *it;
-            benchmark::DoNotOptimize(element);
+            benchmark::DoNotOptimize(*it);
+            benchmark::ClobberMemory();
         }
     }
 }
-BENCHMARK(BM_VectorItAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorItAccess1D)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_BufferShiftLeft(benchmark::State& state)
+{
+    TestBuffer<1> b(state.range(0));
+
+    benchmark::DoNotOptimize(b);
+
+    for (auto _ : state)
+    {
+        TestBuffer<1> b2 = b << 100;
+        benchmark::DoNotOptimize(b2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_BufferShiftLeft)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_VectorShiftLeft(benchmark::State& state)
+{
+    std::vector<test_data_t> v(state.range(0));
+
+    benchmark::DoNotOptimize(v);
+
+    for (auto _ : state)
+    {
+        std::vector<test_data_t> v2(v.size());
+        std::copy(v.begin() + 100, v.end(), v2.begin());
+        benchmark::DoNotOptimize(v2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VectorShiftLeft)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_BufferShiftRight(benchmark::State& state)
+{
+    TestBuffer<1> b(state.range(0));
+
+    benchmark::DoNotOptimize(b);
+
+    for (auto _ : state)
+    {
+        TestBuffer<1> b2 = b >> 100;
+        benchmark::DoNotOptimize(b2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_BufferShiftRight)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_VectorShiftRight(benchmark::State& state)
+{
+    std::vector<test_data_t> v(state.range(0));
+
+    benchmark::DoNotOptimize(v);
+
+    for (auto _ : state)
+    {
+        std::vector<test_data_t> v2(v.size());
+        std::copy(v.begin(), v.end() - 100, v2.begin() + 100);
+        benchmark::DoNotOptimize(v2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VectorShiftRight)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_BufferSubBuffer(benchmark::State& state)
 {
@@ -307,9 +388,10 @@ static void BM_BufferSubBuffer(benchmark::State& state)
     {
         TestBuffer<1> sb = b.SubBuffer(100, state.range(0) - 100);
         benchmark::DoNotOptimize(sb);
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_BufferSubBuffer)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_BufferSubBuffer)->Unit(TIME_UNIT)->Arg(1e6);
 
 static void BM_VectorSubVector(benchmark::State& state)
 {
@@ -319,8 +401,105 @@ static void BM_VectorSubVector(benchmark::State& state)
 
     for (auto _ : state)
     {
-        std::vector<int> sv(v.begin() + 100, v.begin() + (state.range(0) - 100));
+        std::vector<test_data_t> sv(v.begin() + 100, v.begin() + (state.range(0) - 100));
         benchmark::DoNotOptimize(sv);
+        benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_VectorSubVector)->Arg(10000)->Arg(100000)->Arg(1000000);
+BENCHMARK(BM_VectorSubVector)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_BufferPrepend(benchmark::State& state)
+{
+    TestBuffer<1> b1(state.range(0));
+
+    benchmark::DoNotOptimize(b1);
+
+    for (auto _ : state)
+    {
+        TestBuffer<1> b2(state.range(0));
+        b2.Prepend(b1);
+        benchmark::DoNotOptimize(b2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_BufferPrepend)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_VectorPrepend(benchmark::State& state)
+{
+    std::vector<test_data_t> v1(state.range(0));
+
+    benchmark::DoNotOptimize(v1);
+
+    for (auto _ : state)
+    {
+        std::vector<test_data_t> v2(state.range(0));
+        v2.insert(v2.begin(), v1.begin(), v1.end());
+        benchmark::DoNotOptimize(v2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VectorPrepend)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_BufferAppend(benchmark::State& state)
+{
+    TestBuffer<1> b1(state.range(0));
+
+    benchmark::DoNotOptimize(b1);
+
+    for (auto _ : state)
+    {
+        TestBuffer<1> b2(state.range(0));
+        b2.Append(b1);
+        benchmark::DoNotOptimize(b2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_BufferAppend)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_VectorAppend(benchmark::State& state)
+{
+    std::vector<test_data_t> v1(state.range(0));
+
+    benchmark::DoNotOptimize(v1);
+
+    for (auto _ : state)
+    {
+        std::vector<test_data_t> v2(state.range(0));
+        v2.insert(v2.end(), v1.begin(), v1.end());
+        benchmark::DoNotOptimize(v2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VectorAppend)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_BufferInsert(benchmark::State& state)
+{
+    TestBuffer<1> b1(state.range(0));
+
+    benchmark::DoNotOptimize(b1);
+
+    for (auto _ : state)
+    {
+        TestBuffer<1> b2(state.range(0));
+        b2.Insert(b1, 100);
+        benchmark::DoNotOptimize(b2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_BufferInsert)->Unit(TIME_UNIT)->Arg(1e6);
+
+static void BM_VectorInsert(benchmark::State& state)
+{
+    std::vector<test_data_t> v1(state.range(0));
+
+    benchmark::DoNotOptimize(v1);
+
+    for (auto _ : state)
+    {
+        std::vector<test_data_t> v2(state.range(0));
+        v2.insert(v2.begin() + 100, v1.begin(), v1.end());
+        benchmark::DoNotOptimize(v2);
+        benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VectorInsert)->Unit(TIME_UNIT)->Arg(1e6);
