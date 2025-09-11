@@ -182,12 +182,14 @@ BENCHMARK(BM_VectorMove1D)->Arg(10000)->Arg(100000)->Arg(1000000);
 static void BM_BufferAccess1D(benchmark::State& state)
 {
     TestBuffer<1> b(state.range(0));
+    size_t size = b.Size();
 
     benchmark::DoNotOptimize(b);
+    benchmark::DoNotOptimize(size);
 
     for (auto _ : state)
     {
-        for (size_t i = 0; i < b.Size(); ++i)
+        for (size_t i = 0; i < size; ++i)
         {
             test_data_t& element = b[i];
             benchmark::DoNotOptimize(element);
@@ -199,12 +201,14 @@ BENCHMARK(BM_BufferAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
 static void BM_VectorAccess1D(benchmark::State& state)
 {
     std::vector<test_data_t> v(state.range(0));
+    size_t size = v.size();
 
     benchmark::DoNotOptimize(v);
+    benchmark::DoNotOptimize(size);
 
     for (auto _ : state)
     {
-        for (size_t i = 0; i < v.size(); ++i)
+        for (size_t i = 0; i < size; ++i)
         {
             test_data_t& element = v[i];
             benchmark::DoNotOptimize(element);
@@ -216,12 +220,14 @@ BENCHMARK(BM_VectorAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
 static void BM_BufferAtAccess1D(benchmark::State& state)
 {
     TestBuffer<1> b(state.range(0));
+    size_t size = b.Size();
 
     benchmark::DoNotOptimize(b);
+    benchmark::DoNotOptimize(size);
 
     for (auto _ : state)
     {
-        for (size_t i = 0; i < b.Size(); ++i)
+        for (size_t i = 0; i < size; ++i)
         {
             test_data_t& element = b.At(i);
             benchmark::DoNotOptimize(element);
@@ -233,12 +239,14 @@ BENCHMARK(BM_BufferAtAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
 static void BM_VectorAtAccess1D(benchmark::State& state)
 {
     std::vector<test_data_t> v(state.range(0));
+    size_t size = v.size();
 
     benchmark::DoNotOptimize(v);
+    benchmark::DoNotOptimize(size);
 
     for (auto _ : state)
     {
-        for (size_t i = 0; i < v.size(); ++i)
+        for (size_t i = 0; i < size; ++i)
         {
             test_data_t& element = v.at(i);
             benchmark::DoNotOptimize(element);
@@ -250,12 +258,16 @@ BENCHMARK(BM_VectorAtAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
 static void BM_BufferItAccess1D(benchmark::State& state)
 {
     TestBuffer<1> b(state.range(0));
+    auto itBegin = b.begin();
+    auto itEnd = b.end();
 
     benchmark::DoNotOptimize(b);
+    benchmark::DoNotOptimize(itBegin);
+    benchmark::DoNotOptimize(itEnd);
 
     for (auto _ : state)
     {
-        for (auto it = b.begin(); it != b.end(); ++it)
+        for (auto it = itBegin; it != itEnd; ++it)
         {
             test_data_t& element = *it;
             benchmark::DoNotOptimize(element);
@@ -267,12 +279,16 @@ BENCHMARK(BM_BufferItAccess1D)->Arg(10000)->Arg(100000)->Arg(1000000);
 static void BM_VectorItAccess1D(benchmark::State& state)
 {
     std::vector<test_data_t> v(state.range(0));
+    auto itBegin = v.begin();
+    auto itEnd = v.end();
 
     benchmark::DoNotOptimize(v);
+    benchmark::DoNotOptimize(itBegin);
+    benchmark::DoNotOptimize(itEnd);
 
     for (auto _ : state)
     {
-        for (auto it = v.begin(); it != v.end(); ++it)
+        for (auto it = itBegin; it != itEnd; ++it)
         {
             test_data_t& element = *it;
             benchmark::DoNotOptimize(element);

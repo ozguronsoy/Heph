@@ -30,7 +30,7 @@
 #error C++ 23 or above is required
 #endif
 
- /** @brief exports/imports the members, methods, and classes for shared libraries. */
+ /** @brief Exports/imports the members, methods, and classes for shared libraries. */
 #if defined(HEPH_SHARED_LIB)
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -57,13 +57,22 @@
 
 #endif
 
- /** @brief name of the current function. */
+ /** @brief Name of the current function. */
 #if defined(__GNUC__) || defined(__MINGW32__) || defined(__CYGWIN__) || defined(__clang__) || defined(__INTEL_COMPILER)
 #define HEPH_FUNC __PRETTY_FUNCTION__
 #elif defined(_MSVC_LANG)
 #define HEPH_FUNC __FUNCSIG__
 #else
 #define HEPH_FUNC __func__
+#endif
+
+/** @brief Forces compiler to inline the function. */
+#if defined(_MSC_VER)
+    #define HEPH_FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+    #define HEPH_FORCE_INLINE inline __attribute__((always_inline))
+#else
+    #define HEPH_FORCE_INLINE inline
 #endif
 
 /** Deletes the copy constructor and assignment operator. */

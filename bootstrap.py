@@ -27,13 +27,14 @@ options = {
     "--release": False,
     "--rebuild": False,
     "--clean": False,
+    "--run": False,
 
     "--clean-cache": False,
     "--no-cache": False,
 
-    "--build-tests": False,
-    "--build-benchmarks": False,
-    "--build-docs": False,
+    "--tests": False,
+    "--benchmarks": False,
+    "--docs": False,
     "--static": False,
     "--shared": False,
 
@@ -122,16 +123,16 @@ def print_help():
 
   --debug                 Configure the project in Debug mode
   --release               Configure the project in Release mode
-
   --rebuild               Delete the build directory and perform a clean rebuild
   --clean                 Delete the build directory and exit
+  --run                   Runs the builded executables
 
   --clean-cache           Delete the cache file
   --no-cache              Ignore cache file for this run
 
-  --build-tests           Build the unit tests
-  --build-benchmarks      Build the benchmarks
-  --build-docs            Build the documentation
+  --tests                 Build the unit tests
+  --benchmarks            Build the benchmarks
+  --docs                  Build the documentation
 
   --static                Build static libraries
   --shared                Build shared libraries
@@ -139,10 +140,10 @@ def print_help():
   --verbose               Show detailed output
 
 {color_info}Examples:{color_default}
-  python bootstrap.py --build-dir "path/to/build" --build-tests --generator Ninja
-  python bootstrap.py --build-docs
-  python bootstrap.py --rebuild --build-tests --verbose
-  python bootstrap.py --msvc --release --build-tests
+  python bootstrap.py --build-dir "path/to/build" --tests --generator Ninja
+  python bootstrap.py --docs
+  python bootstrap.py --rebuild --tests --verbose
+  python bootstrap.py --msvc --release --tests
 """)
 
 if __name__ == "__main__":
@@ -257,11 +258,11 @@ if __name__ == "__main__":
 
     cmake_options.append(f"-DCMAKE_BUILD_TYPE={build_type}")
 
-    if options["--build-tests"]:
+    if options["--tests"]:
         cmake_options.append("-DHEPH_BUILD_TESTS=ON")
-    if options["--build-benchmarks"]:
+    if options["--benchmarks"]:
         cmake_options.append("-DHEPH_BUILD_BENCHMARKS=ON")
-    if options["--build-docs"]:
+    if options["--docs"]:
         cmake_options.append("-DHEPH_BUILD_DOCS=ON")
     if options["--static"]:
         cmake_options.append("-DHEPH_BUILD_STATIC=ON")
@@ -317,3 +318,32 @@ if __name__ == "__main__":
             sys.exit(1)
 
     print(f"{color_success}[Heph] Build files have been written to {options["--build-dir"]}{color_default}")
+
+    if options["--run"]:
+        extension = ".exe" if platform.system() == "Windows" else ""
+
+        if options["--tests"]:
+            print("[Heph] Running tests")
+            exe_name = f"HephTests{extension}"
+            possible_targets = [exe_name, os.path.join("Debug", exe_name), os.path.join("Release", exe_name)]
+            
+            for target in possible_targets:
+                full_path = os.path.join(options["--build-dir"], "tests", target)
+                if os.path.exists(full_path):
+                    cmd_str = f"./{full_path}"
+                    print_verbose(f"[Heph] Running command: {cmd_str}")
+                    subprocess.run(cmd_str, check=True)
+                    break
+
+        if options["--benchmarks"]:
+            print("[Heph] Running benchmarks")
+            exe_name = f"HephBenchmarks{extension}"
+            possible_targets = [exe_name, os.path.join("Debug", exe_name), os.path.join("Release", exe_name)]
+
+            for target in possible_targets:
+                full_path = os.path.join(options["--build-dir"], "benchmarks", target)
+                if os.path.exists(full_path):
+                    cmd_str = f"./{full_path}"
+                    print_verbose(f"[Heph] Running command: {cmd_str}")
+                    subprocess.run(cmd_str, check=True)
+                    break

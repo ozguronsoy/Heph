@@ -712,8 +712,8 @@ namespace Heph
             if constexpr (NDimensions == 1)
             {
                 (void)std::copy(
-                    (src.pData + index),
-                    (src.pData + index + size),
+                    src.pData + index,
+                    src.pData + index + size,
                     dest.pData
                 );
             }

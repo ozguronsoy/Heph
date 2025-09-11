@@ -62,19 +62,19 @@ namespace Heph
          * @param strides Buffer strides.
          * @param indices Buffer indices.
          */
-        CircularBufferIterator(pointer ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
+        constexpr CircularBufferIterator(pointer ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
             : pData(ptr), pSize(&size), pStrides(&strides), indices(indices)
         {
         }
 
         /** Gets the element referenced by the iterator. */
-        reference operator*()
+        constexpr HEPH_FORCE_INLINE reference operator*()
         {
             return CircularBufferIterator::Get<false>(this->pData, *this->pSize, *this->pStrides, this->indices);
         }
 
         /** Provides pointer-like access to the element referenced by the iterator. */
-        pointer operator->()
+        constexpr HEPH_FORCE_INLINE pointer operator->()
         {
             return &this->operator*();
         }
@@ -84,7 +84,7 @@ namespace Heph
          *
          * @param i The value to add to the last dimension.
          */
-        CircularBufferIterator operator+(index_t i) const
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator operator+(index_t i) const
         {
             CircularBufferIterator result = *this;
             result += i;
@@ -98,7 +98,7 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), CircularBufferIterator> operator+(const buffer_index_t& rhs) const
+        constexpr HEPH_FORCE_INLINE typename std::enable_if_t<(NDim > 1), CircularBufferIterator> operator+(const buffer_index_t& rhs) const
         {
             CircularBufferIterator result = *this;
             result += rhs;
@@ -110,7 +110,7 @@ namespace Heph
          *
          * @param i The value to add to the last dimension.
          */
-        CircularBufferIterator& operator+=(index_t i)
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator& operator+=(index_t i)
         {
             this->IncrementIndex(NDimensions - 1, i);
 
@@ -124,7 +124,7 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), CircularBufferIterator&> operator+=(const buffer_index_t& rhs)
+        constexpr HEPH_FORCE_INLINE typename std::enable_if_t<(NDim > 1), CircularBufferIterator&> operator+=(const buffer_index_t& rhs)
         {
             for (size_t i = 0; i < NDimensions; ++i)
             {
@@ -139,7 +139,7 @@ namespace Heph
          *
          * @param i The value to subtract from the last dimension.
          */
-        CircularBufferIterator operator-(index_t i) const
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator operator-(index_t i) const
         {
             CircularBufferIterator result = *this;
             result -= i;
@@ -153,7 +153,7 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), CircularBufferIterator> operator-(const buffer_index_t& rhs) const
+        constexpr HEPH_FORCE_INLINE typename std::enable_if_t<(NDim > 1), CircularBufferIterator> operator-(const buffer_index_t& rhs) const
         {
             CircularBufferIterator result = *this;
             result -= rhs;
@@ -165,7 +165,7 @@ namespace Heph
          *
          * @param i The value to subtract from the last dimension.
          */
-        CircularBufferIterator& operator-=(index_t i)
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator& operator-=(index_t i)
         {
             this->DecrementIndex(NDimensions - 1, i);
             return *this;
@@ -178,7 +178,7 @@ namespace Heph
          */
         template<size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        typename std::enable_if_t<(NDim > 1), CircularBufferIterator&> operator-=(const buffer_index_t& rhs)
+        constexpr HEPH_FORCE_INLINE typename std::enable_if_t<(NDim > 1), CircularBufferIterator&> operator-=(const buffer_index_t& rhs)
         {
             for (size_t i = 0; i < NDimensions; ++i)
             {
@@ -189,7 +189,7 @@ namespace Heph
         }
 
         /** Moves the iterator forward by one. */
-        CircularBufferIterator& operator++()
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator& operator++()
         {
             if constexpr (NDimensions == 1) this->indices++;
             else this->IncrementIndex(NDimensions - 1);
@@ -198,7 +198,7 @@ namespace Heph
         }
 
         /** @copydoc operator++ */
-        CircularBufferIterator& operator++(int)
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator& operator++(int)
         {
             CircularBufferIterator temp = *this;
             this->operator++();
@@ -206,7 +206,7 @@ namespace Heph
         }
 
         /** Moves the iterator backwards by one. */
-        CircularBufferIterator& operator--()
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator& operator--()
         {
             if constexpr (NDimensions == 1) this->indices--;
             else this->DecrementIndex(NDimensions - 1);
@@ -215,7 +215,7 @@ namespace Heph
         }
 
         /** @copydoc operator-- */
-        CircularBufferIterator& operator--(int)
+        constexpr HEPH_FORCE_INLINE CircularBufferIterator& operator--(int)
         {
             CircularBufferIterator temp = *this;
             this->operator--();
@@ -223,13 +223,13 @@ namespace Heph
         }
 
         /** Checks whether both iterators belong to same buffer and at the same position. */
-        bool operator==(const CircularBufferIterator& rhs) const
+        constexpr HEPH_FORCE_INLINE bool operator==(const CircularBufferIterator& rhs) const
         {
             return this->pData == rhs.pData && this->indices == rhs.indices;
         }
 
         /** Gets the current indices. */
-        const buffer_index_t& Indices() const
+        constexpr HEPH_FORCE_INLINE const buffer_index_t& Indices() const
         {
             return this->indices;
         }
@@ -240,7 +240,7 @@ namespace Heph
          * @param dim Dimension to move.
          * @param n The value to add.
          */
-        void IncrementIndex(size_t dim, index_t n = 1)
+        constexpr void IncrementIndex(size_t dim, index_t n = 1)
         {
             if constexpr (NDimensions == 1) this->indices += n;
             else
@@ -262,7 +262,7 @@ namespace Heph
          * @param dim Dimension to move.
          * @param n The value to subtract.
          */
-        void DecrementIndex(size_t dim, index_t n = 1)
+        constexpr void DecrementIndex(size_t dim, index_t n = 1)
         {
             if constexpr (NDimensions == 1) this->indices -= n;
             else
@@ -294,7 +294,7 @@ namespace Heph
          */
         template<bool CheckErrors, size_t NDim = NDimensions>
             requires (NDim == NDimensions)
-        static typename std::enable_if_t<(NDim > 1), reference> Get(pointer const& ptr, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
+        static constexpr HEPH_FORCE_INLINE typename std::enable_if_t<(NDim > 1), reference> Get(pointer const& ptr, const buffer_size_t& size, const buffer_size_t& strides, const auto... indices)
         {
             static_assert(sizeof...(indices) > 0 && sizeof...(indices) <= NDimensions, "Invalid number of indices parameters.");
             static_assert((std::is_convertible_v<decltype(indices), index_t> && ...), "Invalid type for indices parameters, must be convertible to index_t.");
@@ -312,7 +312,7 @@ namespace Heph
          * @param strides Buffer strides.
          */
         template<bool CheckErrors>
-        static reference Get(pointer ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
+        static constexpr HEPH_FORCE_INLINE reference Get(pointer ptr, const buffer_size_t& size, const buffer_size_t& strides, const buffer_index_t& indices)
         {
             if constexpr (NDimensions == 1)
             {
